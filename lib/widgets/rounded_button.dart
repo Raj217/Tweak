@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
 
 class RoundedButton extends StatelessWidget {
-  const RoundedButton({required this.text, required this.onPressed});
+  const RoundedButton(
+      {required this.text, required this.onPressed, this.textStyle});
 
   final String text;
+  final TextStyle? textStyle;
   final void Function()? onPressed;
 
   @override
@@ -37,7 +39,7 @@ class RoundedButton extends StatelessWidget {
             child: TextButton(
               child: Text(
                 text,
-                style: kButtonTextStyle.copyWith(fontSize: 20),
+                style: textStyle ?? kButtonTextStyle.copyWith(fontSize: 20),
               ),
               onPressed: onPressed,
               style: ButtonStyle(

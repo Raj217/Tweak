@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
+import 'package:tweak/screens/add_tasks.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:tweak/widgets/circular_progress_bar.dart';
@@ -84,7 +85,14 @@ class _HomeState extends State<Home> {
                             textAlign: TextAlign.end,
                             style: kInfoTextStyle.copyWith(
                                 fontSize: 55, height: 1.1)),
-                        onTap: () {}),
+                        onTap: () {
+                          showModalBottomSheet(
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            context: context,
+                            builder: (context) => AddTask(),
+                          );
+                        }),
                   ),
                 ],
               ),

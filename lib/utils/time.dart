@@ -60,7 +60,6 @@ class Time extends ChangeNotifier {
   }
 
   void startTimer() {
-    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _timeWork += 1;
       saveTime();

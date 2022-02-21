@@ -78,14 +78,22 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               GlowText(
-                Provider.of<Time>(context).getTimeWork,
+                Provider.of<Time>(context).getTimeWorkMajor,
                 style: kInfoTextStyle.copyWith(fontSize: 35),
               ),
-              const SizedBox(width: 3),
               GlowText(
-                Provider.of<Time>(context).getWorkTimeUnit,
+                Provider.of<Time>(context).getWorkTimeUnitMajor,
                 style: kInfoTextStyle,
-              )
+              ),
+              const SizedBox(width: 5),
+              GlowText(
+                Provider.of<Time>(context).getTimeWorkMinor,
+                style: kInfoTextStyle.copyWith(fontSize: 35),
+              ),
+              GlowText(
+                Provider.of<Time>(context).getWorkTimeUnitMinor,
+                style: kInfoTextStyle,
+              ),
             ],
           ),
         ),

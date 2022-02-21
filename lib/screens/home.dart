@@ -91,7 +91,7 @@ class _HomeState extends State<Home> {
                             backgroundColor: Colors.transparent,
                             context: context,
                             builder: (context) => AddTask(),
-                          );
+                          ).then((value) => {setState(() {})});
                         }),
                   ),
                 ],
@@ -100,8 +100,14 @@ class _HomeState extends State<Home> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: kGrayTranslucentBG,
-                border: Border.all(color: kGrayTranslucentText),
+                color: Provider.of<Tasks>(context).nTasks > 0
+                    ? kGrayTranslucentBG
+                    : Colors.transparent,
+                border: Border.all(
+                  color: Provider.of<Tasks>(context).nTasks > 0
+                      ? kGrayTranslucentText
+                      : Colors.transparent,
+                ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(35),
                   topRight: Radius.circular(35),
@@ -109,9 +115,7 @@ class _HomeState extends State<Home> {
               ),
               child: Padding(
                 padding: EdgeInsets.all(20.0),
-                child: Column(
-                    children:
-                        Provider.of<Tasks>(context, listen: false).getTasks),
+                child: Column(children: Provider.of<Tasks>(context).getTasks),
               ),
             ),
           ],

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'local_storage.dart';
 import 'dart:convert';
 
@@ -7,9 +8,12 @@ class Time extends ChangeNotifier {
   int _timeWork = 0;
   int _timeSleep = 0;
   int _timeRest = 0;
-  String _workTimeUnit = '';
-  String _sleepTimeUnit = '';
-  String _restTimeUnit = '';
+  String _workTimeUnitMajor = '';
+  String _workTimeUnitMinor = '';
+  String _sleepTimeUnitMajor = '';
+  String _sleepTimeUnitMinor = '';
+  String _restTimeUnitMajor = '';
+  String _restTimeUnitMinor = '';
   String fileName = 'time.txt';
   FileHandler fileHandler = FileHandler();
   DateTime _prevDateTime = DateTime(0);
@@ -17,34 +21,76 @@ class Time extends ChangeNotifier {
   Timer? _timer;
   String _currentUserState = 'working';
 
-  String get getTimeWork {
+  String get getTimeWorkMajor {
     List<String> temp = convSecsToString(secs: _timeWork);
-    _workTimeUnit = temp[1];
+    _workTimeUnitMajor = temp[2];
+    _workTimeUnitMinor = _workTimeUnitMajor == 'h' ? 'min' : 's';
     return temp[0];
   }
 
-  String get getTimeSleep {
+  String get getTimeWorkMinor {
+    List<String> temp = convSecsToString(secs: _timeWork);
+    return temp[1];
+  }
+
+  String get getTimeSleepMajor {
     List<String> temp = convSecsToString(secs: _timeSleep);
-    _sleepTimeUnit = temp[1];
-    return '${temp[0]} $_sleepTimeUnit';
+    _sleepTimeUnitMajor = temp[2];
+    _sleepTimeUnitMinor = _sleepTimeUnitMajor == 'h' ? 'min' : 's';
+    return temp[0];
+  }
+
+  String get getTimeSleepMinor {
+    List<String> temp = convSecsToString(secs: _timeSleep);
+    return temp[1];
+  }
+
+  String get getTimeRestMajor {
+    List<String> temp = convSecsToString(secs: _timeRest);
+    _restTimeUnitMajor = temp[2];
+    _restTimeUnitMinor = _restTimeUnitMajor == 'h' ? 'min' : 's';
+    return temp[0];
+  }
+
+  String get getTimeRestMinor {
+    List<String> temp = convSecsToString(secs: _timeRest);
+    return temp[1];
+  }
+
+  String get getTimeWork {
+    return '$getTimeWorkMajor$_workTimeUnitMajor $getTimeWorkMinor$_workTimeUnitMinor';
+  }
+
+  String get getTimeSleep {
+    return '$getTimeSleepMajor$_sleepTimeUnitMajor $getTimeSleepMinor$_sleepTimeUnitMinor';
   }
 
   String get getTimeRest {
-    List<String> temp = convSecsToString(secs: _timeRest);
-    _restTimeUnit = temp[1];
-    return '${temp[0]} $_restTimeUnit';
+    return '$getTimeRestMajor$_restTimeUnitMajor $getTimeRestMinor$_restTimeUnitMinor';
   }
 
-  String get getWorkTimeUnit {
-    return _workTimeUnit;
+  String get getWorkTimeUnitMajor {
+    return _workTimeUnitMajor;
   }
 
-  String get getSleepTimeUnit {
-    return _sleepTimeUnit;
+  String get getSleepTimeUnitMajor {
+    return _sleepTimeUnitMajor;
   }
 
-  String get getRestTimeUnit {
-    return _restTimeUnit;
+  String get getRestTimeUnitMajor {
+    return _restTimeUnitMajor;
+  }
+
+  String get getWorkTimeUnitMinor {
+    return _workTimeUnitMinor;
+  }
+
+  String get getSleepTimeUnitMinor {
+    return _sleepTimeUnitMinor;
+  }
+
+  String get getRestTimeUnitMinor {
+    return _restTimeUnitMinor;
   }
 
   String get getCurrentUserState {
@@ -114,19 +160,57 @@ class Time extends ChangeNotifier {
   }
 
   List<String> convSecsToString({int secs = 0}) {
-    String? unit;
+    String? majorUnit;
     int hour = secs ~/ 3600;
     secs -= hour * 3600;
     int minutes = secs ~/ 60;
     secs -= minutes * 60;
-    hour > 0 ? unit = 'hr' : unit = 'min';
+    hour > 0 ? majorUnit = 'h' : majorUnit = 'min';
 
     return hour > 0
-        ? ["${_formatTime(hour)}:${_formatTime(minutes)}", unit]
-        : ["${_formatTime(minutes)}:${_formatTime(secs)}", unit];
+        ? [
+            _formatTime(hour).toString(),
+            _formatTime(minutes).toString(),
+            majorUnit
+          ]
+        : [
+            _formatTime(minutes).toString(),
+            _formatTime(secs).toString(),
+            majorUnit
+          ];
   }
 
   String _formatTime(int time) {
     return time.toString().padLeft(2, '0');
+  }
+
+  static DateTime timeOfDayToDateTime(
+      {required TimeOfDay tod, DateTime? date}) {
+    date = date ?? DateTime.now();
+    DateTime dateTime =
+        DateTime(date.year, date.month, date.day, tod.hour, tod.minute);
+    return dateTime;
+  }
+
+  static String durationExtractor(Duration duration) {
+    int hour = duration.inHours;
+    int minutes = duration.inMinutes - hour * 60;
+    String output;
+
+    if (hour == 0) {
+      output = '${minutes}min';
+    } else if (minutes == 0) {
+      output = '${hour}h';
+    } else {
+      output = '${hour}h ${minutes}min';
+    }
+
+    return output;
+  }
+
+  static String differenceTimeOfDay(
+      {required TimeOfDay startTime, required TimeOfDay endTime}) {
+    return Time.durationExtractor(Time.timeOfDayToDateTime(tod: endTime)
+        .difference(Time.timeOfDayToDateTime(tod: startTime)));
   }
 }

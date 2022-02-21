@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
 
 class CustomTextField extends StatelessWidget {
-  const CustomTextField({Key? key, this.onChanged}) : super(key: key);
+  const CustomTextField(
+      {Key? key,
+      this.onChanged,
+      this.hintText,
+      this.maxLines = 1,
+      this.verticalPadding = 10})
+      : super(key: key);
 
   final void Function(String)? onChanged;
+  final String? hintText;
+  final int maxLines;
+  final double verticalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -12,21 +21,27 @@ class CustomTextField extends StatelessWidget {
       decoration: const BoxDecoration(
           color: kGrayTranslucentBG,
           borderRadius: BorderRadius.all(Radius.circular(15))),
-      child: TextField(
-        textAlign: TextAlign.center,
-        autofocus: true,
-        cursorColor: kGrayTranslucentText,
-        onChanged: onChanged,
-        style: kInfoTextStyle.copyWith(color: kGrayTranslucentText),
-        decoration: const InputDecoration(
-          hintText: 'Task name...',
-          hintStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          contentPadding: EdgeInsets.symmetric(vertical: 5),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(width: 0, color: Colors.transparent),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(width: 0, color: Colors.transparent),
+      child: Padding(
+        padding:
+            EdgeInsets.symmetric(horizontal: 15.0, vertical: verticalPadding),
+        child: TextField(
+          textAlign: TextAlign.center,
+          autofocus: true,
+          cursorColor: kGrayTranslucentText,
+          onChanged: onChanged,
+          maxLines: maxLines,
+          style: kInfoTextStyle.copyWith(color: kWhite),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            contentPadding: const EdgeInsets.symmetric(vertical: 5),
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(width: 0, color: Colors.transparent),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(width: 0, color: Colors.transparent),
+            ),
           ),
         ),
       ),

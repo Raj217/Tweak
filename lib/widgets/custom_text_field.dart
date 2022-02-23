@@ -7,13 +7,15 @@ class CustomTextField extends StatelessWidget {
       this.onChanged,
       this.hintText,
       this.maxLines = 1,
-      this.verticalPadding = 10})
+      this.verticalPadding = 10,
+      this.initVal})
       : super(key: key);
 
   final void Function(String)? onChanged;
   final String? hintText;
   final int maxLines;
   final double verticalPadding;
+  final String? initVal;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,8 @@ class CustomTextField extends StatelessWidget {
       child: Padding(
         padding:
             EdgeInsets.symmetric(horizontal: 15.0, vertical: verticalPadding),
-        child: TextField(
+        child: TextFormField(
+          initialValue: initVal,
           textAlign: TextAlign.center,
           autofocus: true,
           cursorColor: kGrayTranslucentText,

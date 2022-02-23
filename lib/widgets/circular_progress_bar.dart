@@ -71,8 +71,7 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
         ),
         Padding(
           padding: EdgeInsets.only(
-              left:
-                  MediaQuery.of(context).size.width / 2 - widget.radius / 2.4),
+              left: MediaQuery.of(context).size.width / 2 - widget.radius / 3),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

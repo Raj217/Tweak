@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
-import 'package:tweak/screens/add_tasks.dart';
+import 'package:tweak/screens/add_edit_tasks.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:tweak/widgets/circular_progress_bar.dart';
@@ -15,12 +15,25 @@ class Home extends StatefulWidget {
   Home({Key? key, required this.isRunning}) : super(key: key);
   static String id = 'Home Screen';
   bool isRunning;
+  bool isApproved = false;
 
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
+  void button() {
+    if (widget.isApproved) {
+      setState(() {
+        widget.isApproved = false;
+        widget.isRunning = !widget.isRunning;
+        widget.isRunning
+            ? Provider.of<Time>(context, listen: false).startTimer()
+            : Provider.of<Time>(context, listen: false).endTimer();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     timeDilation = 2;
@@ -46,19 +59,21 @@ class _HomeState extends State<Home> {
                   const SizedBox(height: 20),
                   GlowText(
                     Provider.of<Time>(context, listen: false)
-                        .getCurrentUserState, // TODO: Add dynamicity to task-working/resting/sleeping
+                        .getCurrentUserState,
                     style: kInfoTextStyle.copyWith(fontSize: 30),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       GlowText(
-                        'sleep: ${Provider.of<Time>(context, listen: false).getTimeSleep} ', // TODO: Add dynamicity to time
-                        style: kInfoTextStyle.copyWith(color: kGreen),
+                        'sleep: ${Provider.of<Time>(context).getTimeSleep} ',
+                        style: kInfoTextStyle.copyWith(
+                            color: Provider.of<Time>(context).getSleepColor),
                       ),
                       GlowText(
-                        'rest: ${Provider.of<Time>(context, listen: false).getTimeRest}', // TODO: Add dynamicity to time
-                        style: kInfoTextStyle.copyWith(color: kGreen),
+                        'rest: ${Provider.of<Time>(context).getTimeRest}',
+                        style: kInfoTextStyle.copyWith(
+                            color: Provider.of<Time>(context).getRestColor),
                       ),
                     ],
                   ),
@@ -66,14 +81,52 @@ class _HomeState extends State<Home> {
                   RoundedButton(
                     text: widget.isRunning ? 'End' : 'Begin',
                     onPressed: () {
-                      setState(() {
-                        widget.isRunning = !widget.isRunning;
-                        widget.isRunning
-                            ? Provider.of<Time>(context, listen: false)
-                                .startTimer()
-                            : Provider.of<Time>(context, listen: false)
-                                .endTimer();
-                      });
+                      showDialog(
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                                backgroundColor: kGrayBG,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(15)),
+                                ),
+                                title: Text('Confirm',
+                                    style:
+                                        kInfoTextStyle.copyWith(color: kWhite)),
+                                content: Text(
+                                    'Do you want to ${widget.isRunning ? 'End' : 'Begin'} your day?',
+                                    style:
+                                        kInfoTextStyle.copyWith(color: kWhite)),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text(
+                                      'No',
+                                      style:
+                                          kInfoTextStyle.copyWith(color: kRed),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: Text(
+                                      'Yes',
+                                      style: kInfoTextStyle.copyWith(
+                                          color: kLightBlue),
+                                    ),
+                                    onPressed: () {
+                                      widget.isApproved = true;
+                                      if (!widget.isRunning) {
+                                        Provider.of<Tasks>(context,
+                                                listen: false)
+                                            .deleteAllTasks();
+                                      }
+                                      Navigator.of(context).pop();
+                                      button();
+                                    },
+                                  ),
+                                ]);
+                          },
+                          context: context);
                     },
                   ),
                   Padding(
@@ -86,12 +139,14 @@ class _HomeState extends State<Home> {
                             style: kInfoTextStyle.copyWith(
                                 fontSize: 55, height: 1.1)),
                         onTap: () {
-                          showModalBottomSheet(
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            context: context,
-                            builder: (context) => AddTask(),
-                          ).then((value) => {setState(() {})});
+                          if (widget.isRunning) {
+                            showModalBottomSheet(
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              context: context,
+                              builder: (context) => AddEditTask(),
+                            ).then((value) => {setState(() {})});
+                          }
                         }),
                   ),
                 ],

@@ -4,11 +4,15 @@ import 'package:tweak/utils/constants.dart';
 
 class EditableTime extends StatelessWidget {
   EditableTime(
-      {required this.text, required this.timeVal, required this.onChange});
+      {required this.text,
+      required this.timeVal,
+      required this.onChange,
+      required this.onChangeDateTime});
 
   final String text;
-  final TimeOfDay timeVal;
+  final DateTime timeVal;
   final void Function(TimeOfDay) onChange;
+  final void Function(DateTime) onChangeDateTime;
 
   @override
   Widget build(BuildContext context) {
@@ -17,13 +21,14 @@ class EditableTime extends StatelessWidget {
         Navigator.of(context).push(
           showPicker(
               accentColor: kLightBlue,
-              okStyle: TextStyle(
+              okStyle: const TextStyle(
                   fontFamily: 'MohrRounded', fontWeight: FontWeight.bold),
-              cancelStyle: TextStyle(
+              cancelStyle: const TextStyle(
                   fontFamily: 'MohrRounded', fontWeight: FontWeight.bold),
               iosStylePicker: true,
-              value: timeVal,
-              onChange: onChange),
+              value: TimeOfDay(hour: timeVal.hour, minute: timeVal.minute),
+              onChange: onChange,
+              onChangeDateTime: onChangeDateTime),
         );
       },
       child: Text(

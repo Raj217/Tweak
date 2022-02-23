@@ -27,7 +27,7 @@ class FileHandler {
 
       return contents;
     } catch (e) {
-      print(e);
+      print('while reading: $e');
     }
 
     return '';

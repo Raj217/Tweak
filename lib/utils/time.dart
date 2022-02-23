@@ -1,20 +1,26 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tweak/utils/tasks_data.dart';
 import 'local_storage.dart';
 import 'dart:convert';
+import 'constants.dart';
 
 class Time extends ChangeNotifier {
   int _timeWork = 0;
-  int _timeSleep = 0;
+  int _timeSleepPrevDay = 0;
+  int _timeSleepCurrentDay = 0;
   int _timeRest = 0;
+  DateTime? _beginDateTime;
+  int _prevDaySleepTimeUpperLim = 28800; // 7:30 hr
+  int _currentDaySleepTimeUpperLim = 3600; // 1 hour
+  int _restTimeUpperLim = 10800; // 3 hr
   String _workTimeUnitMajor = '';
   String _workTimeUnitMinor = '';
   String _sleepTimeUnitMajor = '';
   String _sleepTimeUnitMinor = '';
   String _restTimeUnitMajor = '';
   String _restTimeUnitMinor = '';
-  String fileName = 'time.txt';
+  String fileName = 'time.json';
   FileHandler fileHandler = FileHandler();
   DateTime _prevDateTime = DateTime(0);
   DateTime _currentDateTime = DateTime(0);
@@ -34,14 +40,16 @@ class Time extends ChangeNotifier {
   }
 
   String get getTimeSleepMajor {
-    List<String> temp = convSecsToString(secs: _timeSleep);
+    List<String> temp =
+        convSecsToString(secs: _timeSleepCurrentDay + _timeSleepPrevDay);
     _sleepTimeUnitMajor = temp[2];
     _sleepTimeUnitMinor = _sleepTimeUnitMajor == 'h' ? 'min' : 's';
     return temp[0];
   }
 
   String get getTimeSleepMinor {
-    List<String> temp = convSecsToString(secs: _timeSleep);
+    List<String> temp =
+        convSecsToString(secs: _timeSleepCurrentDay + _timeSleepPrevDay);
     return temp[1];
   }
 
@@ -55,6 +63,10 @@ class Time extends ChangeNotifier {
   String get getTimeRestMinor {
     List<String> temp = convSecsToString(secs: _timeRest);
     return temp[1];
+  }
+
+  DateTime get prevDateTime {
+    return _prevDateTime;
   }
 
   String get getTimeWork {
@@ -105,18 +117,110 @@ class Time extends ChangeNotifier {
     return _timer != null ? true : false;
   }
 
+  Color get getSleepColor {
+    return _currentDaySleepTimeUpperLim + _prevDaySleepTimeUpperLim >
+            _timeSleepCurrentDay + _timeSleepPrevDay
+        ? kYellow
+        : kRed;
+  }
+
+  Color get getRestColor {
+    return _restTimeUpperLim > _timeRest ? kGreen : kRed;
+  }
+
+  DateTime? get getBeginDateTime {
+    _beginDateTime = _currentDateTime.subtract(
+        Duration(seconds: _timeWork + _timeSleepCurrentDay + _timeRest));
+    return _beginDateTime;
+  }
+
+  set setPrevDaySleepTimeUpperLim(int time) {
+    _prevDaySleepTimeUpperLim = time;
+  }
+
+  set setCurrentDaySleepTimeUpperLim(int time) {
+    _currentDaySleepTimeUpperLim = time;
+  }
+
+  set setRestTimeUpperLim(int time) {
+    _restTimeUpperLim = time;
+  }
+
+  int _boundTime(int time) {
+    if (time < 0) {
+      return 0;
+    } else if (time > 86400) {
+      return 86400;
+    }
+    return time;
+  }
+
+  void _boundTimeAll() {
+    _timeWork = _boundTime(_timeWork);
+    _timeSleepPrevDay = _boundTime(_timeSleepPrevDay);
+    _timeSleepCurrentDay = _boundTime(_timeSleepCurrentDay);
+    _timeRest = _boundTime(_timeRest);
+  }
+
+  void addSleepTime(
+      {required Duration duration, bool subtractFromWork = true}) {
+    if (duration.inSeconds > 0) {
+      _timeSleepCurrentDay += duration.inSeconds;
+      _timeWork -= subtractFromWork ? duration.inSeconds : 0;
+      _boundTimeAll();
+      notifyListeners();
+    }
+  }
+
+  void subtractSleepTime({required Duration duration, bool addToWork = true}) {
+    if (duration.inSeconds > 0) {
+      _timeSleepCurrentDay -= duration.inSeconds;
+      _timeWork -= addToWork ? duration.inSeconds : 0;
+      _boundTimeAll();
+      notifyListeners();
+    }
+  }
+
+  void addRestTime({required Duration duration, bool subtractFromWork = true}) {
+    if (duration.inSeconds > 0) {
+      _timeRest += duration.inSeconds;
+      _timeWork -= subtractFromWork ? duration.inSeconds : 0;
+      _timeWork = _timeWork < 0 ? 0 : _timeWork;
+      _boundTimeAll();
+      notifyListeners();
+    }
+  }
+
+  void subtractRestTime({required Duration duration, bool addToWork = true}) {
+    if (duration.inSeconds > 0) {
+      _timeRest -= duration.inSeconds;
+      _timeWork -= addToWork ? duration.inSeconds : 0;
+      _timeWork = _timeWork > 86400 ? 86400 : _timeWork;
+      _boundTimeAll();
+      notifyListeners();
+    }
+  }
+
   void startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _timeWork += 1;
+      _timeWork += _timeWork < 86400 ? 1 : 0;
       saveTime();
       notifyListeners();
     });
   }
 
-  void endTimer() {
+  void endTimer() async {
     _timeWork = 0;
     _timer?.cancel();
-    fileHandler.deleteFile(fileName);
+    Map<String, String> data = {
+      "time elapsed": _timeWork.toString(),
+      'dateTime': _currentDateTime.toString(),
+      'prevDaySleepTime': _timeSleepPrevDay.toString(),
+      'currentDaySleepTime': '0',
+      'restTime': '0',
+      'takePrevDayForSleepCalc': 'true',
+    };
+    await fileHandler.write(fileName: fileName, data: json.encode(data));
     notifyListeners();
   }
 
@@ -125,6 +229,10 @@ class Time extends ChangeNotifier {
     Map<String, String> data = {
       "time elapsed": _timeWork.toString(),
       'dateTime': _currentDateTime.toString(),
+      'prevDaySleepTime': _timeSleepPrevDay.toString(),
+      'currentDaySleepTime': _timeSleepCurrentDay.toString(),
+      'restTime': _timeRest.toString(),
+      'takePrevDayForSleepCalc': 'false',
     };
     await fileHandler.write(fileName: fileName, data: json.encode(data));
   }
@@ -136,11 +244,22 @@ class Time extends ChangeNotifier {
 
       _timeWork = int.parse(dataDecoded['time elapsed']);
       _prevDateTime = DateTime.parse(dataDecoded['dateTime']);
+      _timeSleepPrevDay = int.parse(dataDecoded['prevDaySleepTime']);
+      _timeSleepCurrentDay = int.parse(dataDecoded['currentDaySleepTime']);
+      _timeRest = int.parse(dataDecoded['restTime']);
+
+      bool takePrevDayForSleepCalc =
+          dataDecoded['takePrevDayForSleepCalc'] == 'true' ? true : false;
       _getCurrentDateTime();
 
       int difference = _currentDateTime.difference(_prevDateTime).inSeconds;
-      _timeWork += difference;
+      if (!takePrevDayForSleepCalc) {
+        _timeWork += difference;
+      } else {
+        _timeSleepPrevDay += difference;
+      }
 
+      _boundTimeAll();
       if (_timeWork != 0) startTimer();
     }
   }
@@ -168,20 +287,8 @@ class Time extends ChangeNotifier {
     hour > 0 ? majorUnit = 'h' : majorUnit = 'min';
 
     return hour > 0
-        ? [
-            _formatTime(hour).toString(),
-            _formatTime(minutes).toString(),
-            majorUnit
-          ]
-        : [
-            _formatTime(minutes).toString(),
-            _formatTime(secs).toString(),
-            majorUnit
-          ];
-  }
-
-  String _formatTime(int time) {
-    return time.toString().padLeft(2, '0');
+        ? [hour.toString(), minutes.toString(), majorUnit]
+        : [minutes.toString(), secs.toString(), majorUnit];
   }
 
   static DateTime timeOfDayToDateTime(
@@ -206,11 +313,5 @@ class Time extends ChangeNotifier {
     }
 
     return output;
-  }
-
-  static String differenceTimeOfDay(
-      {required TimeOfDay startTime, required TimeOfDay endTime}) {
-    return Time.durationExtractor(Time.timeOfDayToDateTime(tod: endTime)
-        .difference(Time.timeOfDayToDateTime(tod: startTime)));
   }
 }

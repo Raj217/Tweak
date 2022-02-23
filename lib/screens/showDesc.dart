@@ -4,8 +4,8 @@ import 'package:tweak/utils/constants.dart';
 class ShowDesc extends StatelessWidget {
   const ShowDesc({required this.taskName, required this.taskDesc});
 
-  final String taskName;
-  final String taskDesc;
+  final String? taskName;
+  final String? taskDesc;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class ShowDesc extends StatelessWidget {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Text(
-                          taskName,
+                          taskName ?? 'Unknown Task',
                           textAlign: TextAlign.center,
                           style: kInfoTextStyle.copyWith(color: kDarkBlue),
                         ),
@@ -58,7 +58,7 @@ class ShowDesc extends StatelessWidget {
                       padding: const EdgeInsets.all(15.0),
                       child: SingleChildScrollView(
                         child: Text(
-                          taskDesc,
+                          taskDesc ?? 'No Description',
                           textAlign: TextAlign.center,
                           style: kInfoTextStyle.copyWith(color: kDarkBlue),
                         ),

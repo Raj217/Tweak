@@ -29,7 +29,6 @@ class CustomTextField extends StatelessWidget {
         child: TextFormField(
           initialValue: initVal,
           textAlign: TextAlign.center,
-          autofocus: true,
           cursorColor: kGrayTranslucentText,
           onChanged: onChanged,
           maxLines: maxLines,

@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:tweak/screens/add_edit_tasks.dart';
-import 'package:tweak/screens/showDesc.dart';
+import 'package:tweak/overlays/add_edit_tasks.dart';
+import 'package:tweak/overlays/alert_dialog_box.dart';
+import 'package:tweak/overlays/showDesc.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tweak/utils/tasks_data.dart';
@@ -28,31 +28,34 @@ class TaskTile extends StatelessWidget {
   Duration? duration;
   String taskCategory;
 
-  late Color _baseColor;
+  Color _baseColor = kLightBlue;
   final DateFormat timeExtractor = DateFormat('h:mm a');
 
   void setIndex(int i) {
     index = i;
   }
 
-  void setBaseColor() {
-    switch (taskCategory) {
-      case 'work':
-        _baseColor = kLightBlue;
-        break;
-      case 'sleep':
-        _baseColor = kYellow;
-        break;
-      case 'rest':
-        _baseColor = kGreen;
-        break;
+  void _setBaseColor() {
+    if (taskCategory == categories.work.toString().substring(11)) {
+      _baseColor = kLightBlue;
+    } else if (taskCategory == categories.sleep.toString().substring(11)) {
+      _baseColor = kYellow;
+    } else if (taskCategory == categories.rest.toString().substring(11)) {
+      _baseColor = kGreen;
+    } else if (taskCategory ==
+        categories.unregistered.toString().substring(11)) {
+      _baseColor = kRed;
     }
+  }
+
+  void _setDuration() {
+    duration = duration ?? endDateTime.difference(startDateTime);
   }
 
   @override
   Widget build(BuildContext context) {
-    duration = duration ?? endDateTime.difference(startDateTime);
-    setBaseColor();
+    _setDuration();
+    _setBaseColor();
     return GestureDetector(
       onDoubleTap: () {
         showModalBottomSheet(
@@ -65,7 +68,6 @@ class TaskTile extends StatelessWidget {
           ),
         );
       },
-      onLongPress: () {},
       child: Padding(
         padding: const EdgeInsets.only(left: 10.0, top: 15),
         child: Column(
@@ -119,15 +121,50 @@ class TaskTile extends StatelessWidget {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            if (taskCategory == 'sleep') {
-                              Provider.of<Time>(context, listen: false)
-                                  .subtractSleepTime(duration: duration!);
-                            } else if (taskCategory == 'rest') {
-                              Provider.of<Time>(context, listen: false)
-                                  .subtractRestTime(duration: duration!);
-                            }
-                            Provider.of<Tasks>(context, listen: false)
-                                .deleteTask(index);
+                            bool deleteTask = false;
+                            showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialogBox(
+                                      textTitle: 'Warning',
+                                      textContent:
+                                          'You are about to delete the current task',
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            'Cancel',
+                                            style: kInfoTextStyle.copyWith(
+                                                color: kLightBlue),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            deleteTask = true;
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            'Confirm',
+                                            style: kInfoTextStyle.copyWith(
+                                                color: kRed),
+                                          ),
+                                        )
+                                      ]);
+                                }).then((val) {
+                              if (deleteTask) {
+                                if (taskCategory == 'sleep') {
+                                  Provider.of<Time>(context, listen: false)
+                                      .subtractSleepTime(duration: duration!);
+                                } else if (taskCategory == 'rest') {
+                                  Provider.of<Time>(context, listen: false)
+                                      .subtractRestTime(duration: duration!);
+                                }
+                                Provider.of<Tasks>(context, listen: false)
+                                    .deleteTask(index);
+                              }
+                            });
                           },
                           child: SvgPicture.asset(
                             '$kIconsPath/delete.svg',
@@ -143,7 +180,12 @@ class TaskTile extends StatelessWidget {
                               context: context,
                               backgroundColor: Colors.transparent,
                               builder: (context) => ShowDesc(
-                                  taskName: taskName!, taskDesc: taskDesc!),
+                                taskName: taskName ??
+                                    't', // TODO: Correct this and the next line as well
+                                taskDesc: taskDesc ?? 'no',
+                                taskCategory: taskCategory,
+                                catCol: _baseColor,
+                              ),
                             );
                           },
                           child: Stack(

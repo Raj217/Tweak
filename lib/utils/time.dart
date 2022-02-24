@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:tweak/utils/tasks_data.dart';
 import 'local_storage.dart';
 import 'dart:convert';
 import 'constants.dart';
@@ -11,6 +10,7 @@ class Time extends ChangeNotifier {
   int _timeSleepCurrentDay = 0;
   int _timeRest = 0;
   DateTime? _beginDateTime;
+  int _timeWorkMin = 4; // 12:00 hr
   int _prevDaySleepTimeUpperLim = 28800; // 7:30 hr
   int _currentDaySleepTimeUpperLim = 3600; // 1 hour
   int _restTimeUpperLim = 10800; // 3 hr
@@ -25,6 +25,7 @@ class Time extends ChangeNotifier {
   DateTime _prevDateTime = DateTime(0);
   DateTime _currentDateTime = DateTime(0);
   Timer? _timer;
+  Timer? _timerSleep;
   String _currentUserState = 'working';
 
   String get getTimeWorkMajor {
@@ -106,6 +107,7 @@ class Time extends ChangeNotifier {
   }
 
   String get getCurrentUserState {
+    _currentUserState = _timeWork == 0 ? 'sleeping' : 'working';
     return _currentUserState;
   }
 
@@ -113,8 +115,12 @@ class Time extends ChangeNotifier {
     return _timeWork / 1.0;
   }
 
-  bool get isRunning {
+  bool get getIsRunning {
     return _timer != null ? true : false;
+  }
+
+  bool get getIsEndable {
+    return _timeWork > _timeWorkMin;
   }
 
   Color get getSleepColor {
@@ -126,6 +132,20 @@ class Time extends ChangeNotifier {
 
   Color get getRestColor {
     return _restTimeUpperLim > _timeRest ? kGreen : kRed;
+  }
+
+  Color get getCurrentUserStateColor {
+    Color tempColor = kLightBlue;
+    switch (_currentUserState) {
+      case 'sleeping':
+        tempColor = getSleepColor;
+        break;
+      case 'resting':
+        tempColor = getRestColor;
+        break;
+    }
+
+    return tempColor;
   }
 
   DateTime? get getBeginDateTime {
@@ -201,7 +221,17 @@ class Time extends ChangeNotifier {
     }
   }
 
-  void startTimer() {
+  void startSleepTimer() {
+    _timerSleep = Timer.periodic(const Duration(seconds: 1), (_) {
+      _timeSleepPrevDay += 1;
+      saveTime(dayStarted: false);
+      notifyListeners();
+    });
+  }
+
+  void startWorkTimer() {
+    // TODO: Might be a bug like prev time for _timer?.cancel()
+    _timerSleep?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _timeWork += _timeWork < 86400 ? 1 : 0;
       saveTime();
@@ -210,7 +240,11 @@ class Time extends ChangeNotifier {
   }
 
   void endTimer() async {
+    startSleepTimer();
     _timeWork = 0;
+    _timeSleepPrevDay = 0;
+    _timeSleepCurrentDay = 0;
+    _timeRest = 0;
     _timer?.cancel();
     Map<String, String> data = {
       "time elapsed": _timeWork.toString(),
@@ -218,13 +252,13 @@ class Time extends ChangeNotifier {
       'prevDaySleepTime': _timeSleepPrevDay.toString(),
       'currentDaySleepTime': '0',
       'restTime': '0',
-      'takePrevDayForSleepCalc': 'true',
+      'dayStarted': 'false'
     };
     await fileHandler.write(fileName: fileName, data: json.encode(data));
     notifyListeners();
   }
 
-  void saveTime() async {
+  void saveTime({bool dayStarted = true}) async {
     _getCurrentDateTime();
     Map<String, String> data = {
       "time elapsed": _timeWork.toString(),
@@ -232,7 +266,7 @@ class Time extends ChangeNotifier {
       'prevDaySleepTime': _timeSleepPrevDay.toString(),
       'currentDaySleepTime': _timeSleepCurrentDay.toString(),
       'restTime': _timeRest.toString(),
-      'takePrevDayForSleepCalc': 'false',
+      'dayStarted': dayStarted.toString()
     };
     await fileHandler.write(fileName: fileName, data: json.encode(data));
   }
@@ -248,34 +282,23 @@ class Time extends ChangeNotifier {
       _timeSleepCurrentDay = int.parse(dataDecoded['currentDaySleepTime']);
       _timeRest = int.parse(dataDecoded['restTime']);
 
-      bool takePrevDayForSleepCalc =
-          dataDecoded['takePrevDayForSleepCalc'] == 'true' ? true : false;
+      bool dayStarted = dataDecoded['dayStarted'] == 'true' ? true : false;
       _getCurrentDateTime();
 
       int difference = _currentDateTime.difference(_prevDateTime).inSeconds;
-      if (!takePrevDayForSleepCalc) {
+      if (dayStarted) {
         _timeWork += difference;
       } else {
         _timeSleepPrevDay += difference;
       }
 
       _boundTimeAll();
-      if (_timeWork != 0) startTimer();
+      _timeWork != 0 ? startWorkTimer() : startSleepTimer();
     }
   }
 
   void _getCurrentDateTime() {
     _currentDateTime = DateTime.now();
-  }
-
-  int convStringToSecs({String t = '00:00:00'}) {
-    // Time format- hh:mm:ss
-    List<String> timeParts = t.split(':');
-    int hour = int.parse(timeParts[0] * 3600);
-    int minutes = int.parse(timeParts[1] * 60);
-    int seconds = int.parse(timeParts[2]);
-
-    return hour + minutes + seconds;
   }
 
   List<String> convSecsToString({int secs = 0}) {
@@ -289,14 +312,6 @@ class Time extends ChangeNotifier {
     return hour > 0
         ? [hour.toString(), minutes.toString(), majorUnit]
         : [minutes.toString(), secs.toString(), majorUnit];
-  }
-
-  static DateTime timeOfDayToDateTime(
-      {required TimeOfDay tod, DateTime? date}) {
-    date = date ?? DateTime.now();
-    DateTime dateTime =
-        DateTime(date.year, date.month, date.day, tod.hour, tod.minute);
-    return dateTime;
   }
 
   static String durationExtractor(Duration duration) {

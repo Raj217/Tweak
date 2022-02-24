@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:tweak/overlays/alert_dialog_box.dart';
 import 'package:tweak/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
@@ -19,6 +20,8 @@ class AddEditTask extends StatefulWidget {
 
   @override
   _AddEditTaskState createState() => _AddEditTaskState();
+
+  void then() {}
 }
 
 class _AddEditTaskState extends State<AddEditTask> {
@@ -28,25 +31,29 @@ class _AddEditTaskState extends State<AddEditTask> {
   String? taskDesc;
   String taskCategory = 'work';
   Duration? duration;
+  bool trimCurrentTaskStartTime = true;
+  bool overlappingTasks = false;
   final DateFormat timeExtractor = DateFormat('jm');
 
   @override
   void initState() {
     super.initState();
     getStartAndEndTime();
+    if (widget.edit == true) {
+      getTaskData();
+    }
   }
 
   void changeTaskName() {
-    switch (taskCategory) {
-      case 'work':
-        taskName = 'Unknown Task';
-        break;
-      case 'sleep':
-        taskName = 'Sleep';
-        break;
-      case 'rest':
-        taskName = 'Rest';
-        break;
+    if (taskCategory == categories.work.toString().substring(11)) {
+      taskName = 'Unknown Task';
+    } else if (taskCategory == categories.sleep.toString().substring(11)) {
+      taskName = 'Sleep';
+    } else if (taskCategory == categories.rest.toString().substring(11)) {
+      taskName = 'Rest';
+    } else if (taskCategory ==
+        categories.unregistered.toString().substring(11)) {
+      taskName = 'Unregistered Task';
     }
   }
 
@@ -79,9 +86,6 @@ class _AddEditTaskState extends State<AddEditTask> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.edit == true) {
-      getTaskData();
-    }
     return Center(
       child: SingleChildScrollView(
         child: IntrinsicHeight(
@@ -115,6 +119,12 @@ class _AddEditTaskState extends State<AddEditTask> {
                                       0) {
                                     endDateTime = startDateTime;
                                   }
+                                  TaskTile lastTask =
+                                      Provider.of<Tasks>(context, listen: false)
+                                          .getLastTask;
+                                  Duration diff = startDateTime!
+                                      .difference(lastTask.endDateTime);
+                                  overlappingTasks = true;
                                 });
                               }),
                           Text(
@@ -150,10 +160,14 @@ class _AddEditTaskState extends State<AddEditTask> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: CustomDropDown(onChanged: (val) {
-                      taskCategory = val as String;
-                      changeTaskName();
-                    }),
+                    child: CustomDropDown(
+                        val: taskCategory,
+                        onChanged: (val) {
+                          setState(() {
+                            taskCategory = val as String;
+                            changeTaskName();
+                          });
+                        }),
                   ),
                   CustomTextField(
                     hintText: 'Task name...',
@@ -180,43 +194,93 @@ class _AddEditTaskState extends State<AddEditTask> {
                   RoundedButton(
                     text: widget.edit == true ? 'Edit Task' : 'Add Task',
                     onPressed: () {
-                      duration =
-                          duration ?? endDateTime!.difference(startDateTime!);
-                      if (taskCategory == 'sleep') {
-                        Provider.of<Time>(context, listen: false)
-                            .addSleepTime(duration: duration!);
-                      } else if (taskCategory == 'rest') {
-                        Provider.of<Time>(context, listen: false)
-                            .addRestTime(duration: duration!);
+                      if (overlappingTasks) {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialogBox(
+                                  textTitle: 'Warning',
+                                  textContent:
+                                      'Your current task starting time is before ending of your previous task. Which one do you want to trim?',
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        'Cancel',
+                                        style: kInfoTextStyle.copyWith(
+                                            color: kLightBlue),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        trimCurrentTaskStartTime = true;
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        'Current Task',
+                                        style: kInfoTextStyle.copyWith(
+                                            color: kLightBlue),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        trimCurrentTaskStartTime = false;
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        'Prev Task',
+                                        style: kInfoTextStyle.copyWith(
+                                            color: kLightBlue),
+                                      ),
+                                    )
+                                  ]);
+                            }).then((_) {
+                          duration = duration ??
+                              endDateTime!.difference(startDateTime!);
+                          if (taskCategory ==
+                              categories.sleep.toString().substring(11)) {
+                            Provider.of<Time>(context, listen: false)
+                                .addSleepTime(duration: duration!);
+                          } else if (taskCategory ==
+                              categories.sleep.toString().substring(11)) {
+                            Provider.of<Time>(context, listen: false)
+                                .addRestTime(duration: duration!);
+                          }
+                          if (widget.edit == false) {
+                            Provider.of<Tasks>(context, listen: false).addTask(
+                              trimCurrentTaskStartTime:
+                                  trimCurrentTaskStartTime,
+                              task: TaskTile(
+                                index:
+                                    Provider.of<Tasks>(context, listen: false)
+                                        .nTasks,
+                                startDateTime: startDateTime!,
+                                endDateTime: endDateTime!,
+                                taskName: taskName,
+                                taskDesc: taskDesc,
+                                taskCategory: taskCategory,
+                                duration: duration,
+                              ),
+                            );
+                          } else {
+                            Provider.of<Tasks>(context, listen: false).editTask(
+                              widget.index,
+                              TaskTile(
+                                index: widget.index,
+                                startDateTime: startDateTime!,
+                                endDateTime: endDateTime!,
+                                taskName: taskName,
+                                taskDesc: taskDesc,
+                                taskCategory: taskCategory,
+                                duration: duration,
+                              ),
+                            );
+                          }
+                          Navigator.pop(context);
+                        });
                       }
-                      if (widget.edit == false) {
-                        Provider.of<Tasks>(context, listen: false).addTask(
-                          TaskTile(
-                            index: Provider.of<Tasks>(context, listen: false)
-                                .nTasks,
-                            startDateTime: startDateTime!,
-                            endDateTime: endDateTime!,
-                            taskName: taskName,
-                            taskDesc: taskDesc,
-                            taskCategory: taskCategory,
-                            duration: duration,
-                          ),
-                        );
-                      } else {
-                        Provider.of<Tasks>(context, listen: false).editTask(
-                          widget.index,
-                          TaskTile(
-                            index: widget.index,
-                            startDateTime: startDateTime!,
-                            endDateTime: endDateTime!,
-                            taskName: taskName,
-                            taskDesc: taskDesc,
-                            taskCategory: taskCategory,
-                            duration: duration,
-                          ),
-                        );
-                      }
-                      Navigator.pop(context);
                     },
                     textStyle: kButtonTextStyle.copyWith(fontSize: 16),
                   )

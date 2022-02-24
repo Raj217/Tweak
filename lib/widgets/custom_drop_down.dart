@@ -1,50 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
+import 'package:tweak/utils/tasks_data.dart';
 
 class CustomDropDown extends StatefulWidget {
-  CustomDropDown({required this.onChanged});
+  CustomDropDown({required this.onChanged, this.val});
 
   final void Function(Object?) onChanged;
+  String? val;
 
   @override
   _CustomDropDownState createState() => _CustomDropDownState();
 }
 
 class _CustomDropDownState extends State<CustomDropDown> {
-  String val = 'work';
   @override
   Widget build(BuildContext context) {
+    widget.val ?? categories.work.toString().substring(11);
     final List<DropdownMenuItem<String>> items = [
       DropdownMenuItem(
         child: Text(
-          'work',
+          categories.work.toString().substring(11),
           style: kInfoTextStyle.copyWith(color: kWhite),
         ),
-        value: 'work',
-        onTap: () => val = 'work',
+        value: categories.work.toString().substring(11),
+        onTap: () {
+          widget.val = categories.work.toString().substring(11);
+        },
       ),
       DropdownMenuItem(
         child: Text(
-          'sleep',
+          categories.sleep.toString().substring(11),
           style: kInfoTextStyle.copyWith(color: kWhite),
         ),
-        value: 'sleep',
-        onTap: () => val = 'sleep',
+        value: categories.sleep.toString().substring(11),
+        onTap: () {
+          widget.val = categories.sleep.toString().substring(11);
+        },
       ),
       DropdownMenuItem(
         child: Text(
-          'rest',
+          categories.rest.toString().substring(11),
           style: kInfoTextStyle.copyWith(color: kWhite),
         ),
-        value: 'rest',
-        onTap: () => val = 'rest',
+        value: categories.rest.toString().substring(11),
+        onTap: () {
+          widget.val = categories.rest.toString().substring(11);
+        },
       ),
+      DropdownMenuItem(
+        child: Text(
+          categories.unregistered.toString().substring(11),
+          style: kInfoTextStyle.copyWith(color: kWhite),
+        ),
+        value: categories.unregistered.toString().substring(11),
+        onTap: () {
+          widget.val = categories.unregistered.toString().substring(11);
+        },
+      )
     ];
 
     return DropdownButton(
       items: items,
       onChanged: widget.onChanged,
-      value: val,
+      value: widget.val,
       underline: Container(),
       dropdownColor: kGrayBG,
       borderRadius: const BorderRadius.all(Radius.circular(8)),

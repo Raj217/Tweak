@@ -33,9 +33,7 @@ class Tweak extends StatelessWidget {
         initialRoute: LoadingScreen.id,
         routes: {
           LoadingScreen.id: (context) => const LoadingScreen(),
-          Home.id: (context) => Home(
-                isRunning: Provider.of<Time>(context, listen: false).isRunning,
-              ),
+          Home.id: (context) => const Home(),
         },
       ),
     );

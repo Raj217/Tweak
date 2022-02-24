@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
-import 'package:tweak/screens/add_edit_tasks.dart';
+import 'package:tweak/overlays/add_edit_tasks.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_glow/flutter_glow.dart';
+import 'package:tweak/overlays/alert_dialog_box.dart';
 import 'package:tweak/widgets/circular_progress_bar.dart';
 import 'package:tweak/widgets/logo_and_app_name.dart';
 import 'package:tweak/widgets/rounded_button.dart';
@@ -12,32 +13,93 @@ import 'package:tweak/utils/time.dart';
 import 'package:tweak/utils/tasks_data.dart';
 
 class Home extends StatefulWidget {
-  Home({Key? key, required this.isRunning}) : super(key: key);
+  const Home({Key? key}) : super(key: key);
   static String id = 'Home Screen';
-  bool isRunning;
-  bool isApproved = false;
 
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  void button() {
-    if (widget.isApproved) {
+  bool isApproved = false;
+  String? alertBoxTextTitle;
+  String? alertBoxTextContent;
+  bool optionsType = true;
+  List<TextButton>? actions;
+  bool isRunning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    isRunning = Provider.of<Time>(context, listen: false).getIsRunning;
+  }
+
+  void startEndButtonOnPressed() {
+    isApproved = true;
+    if (isApproved) {
       setState(() {
-        widget.isApproved = false;
-        widget.isRunning = !widget.isRunning;
-        widget.isRunning
-            ? Provider.of<Time>(context, listen: false).startTimer()
+        isApproved = false;
+        isRunning = !isRunning;
+        isRunning
+            ? Provider.of<Time>(context, listen: false).startWorkTimer()
             : Provider.of<Time>(context, listen: false).endTimer();
       });
+    }
+  }
+
+  void getValuesForAlertBox() {
+    bool isEndable = Provider.of<Time>(context, listen: false).getIsEndable;
+    if (!isEndable && isRunning) {
+      alertBoxTextTitle = 'Warning';
+      alertBoxTextContent =
+          'You have not finished your minimum day limit so you cannot end it.';
+      optionsType = false;
+      actions = [
+        TextButton(
+          child: Text(
+            'Ok',
+            style: kInfoTextStyle.copyWith(color: kLightBlue),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        )
+      ];
+    } else {
+      alertBoxTextTitle = 'Confirm';
+      alertBoxTextContent =
+          'Do you want to ${isRunning ? 'End' : 'Begin'} your day?';
+      optionsType = true;
+      actions = [
+        TextButton(
+          child: Text(
+            'No',
+            style: kInfoTextStyle.copyWith(color: kRed),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        TextButton(
+          child: Text(
+            'Yes',
+            style: kInfoTextStyle.copyWith(color: kLightBlue),
+          ),
+          onPressed: () {
+            if (!isRunning) {
+              Provider.of<Tasks>(context, listen: false).deleteAllTasks();
+            }
+            Navigator.of(context).pop();
+            startEndButtonOnPressed();
+          },
+        ),
+      ];
     }
   }
 
   @override
   Widget build(BuildContext context) {
     timeDilation = 2;
-
     return Scaffold(
       backgroundColor: kDarkBlue,
       appBar: AppBar(
@@ -58,9 +120,11 @@ class _HomeState extends State<Home> {
                   const CircularProgressBar(radius: 220),
                   const SizedBox(height: 20),
                   GlowText(
-                    Provider.of<Time>(context, listen: false)
-                        .getCurrentUserState,
-                    style: kInfoTextStyle.copyWith(fontSize: 30),
+                    Provider.of<Time>(context).getCurrentUserState,
+                    style: kInfoTextStyle.copyWith(
+                        fontSize: 30,
+                        color: Provider.of<Time>(context)
+                            .getCurrentUserStateColor),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -79,54 +143,17 @@ class _HomeState extends State<Home> {
                   ),
                   const SizedBox(height: 20),
                   RoundedButton(
-                    text: widget.isRunning ? 'End' : 'Begin',
+                    text: isRunning ? 'End' : 'Begin',
                     onPressed: () {
+                      getValuesForAlertBox();
                       showDialog(
+                          context: context,
                           builder: (BuildContext context) {
-                            return AlertDialog(
-                                backgroundColor: kGrayBG,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(15)),
-                                ),
-                                title: Text('Confirm',
-                                    style:
-                                        kInfoTextStyle.copyWith(color: kWhite)),
-                                content: Text(
-                                    'Do you want to ${widget.isRunning ? 'End' : 'Begin'} your day?',
-                                    style:
-                                        kInfoTextStyle.copyWith(color: kWhite)),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text(
-                                      'No',
-                                      style:
-                                          kInfoTextStyle.copyWith(color: kRed),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: Text(
-                                      'Yes',
-                                      style: kInfoTextStyle.copyWith(
-                                          color: kLightBlue),
-                                    ),
-                                    onPressed: () {
-                                      widget.isApproved = true;
-                                      if (!widget.isRunning) {
-                                        Provider.of<Tasks>(context,
-                                                listen: false)
-                                            .deleteAllTasks();
-                                      }
-                                      Navigator.of(context).pop();
-                                      button();
-                                    },
-                                  ),
-                                ]);
-                          },
-                          context: context);
+                            return AlertDialogBox(
+                                textTitle: alertBoxTextTitle!,
+                                textContent: alertBoxTextContent!,
+                                actions: actions!);
+                          });
                     },
                   ),
                   Padding(
@@ -139,7 +166,8 @@ class _HomeState extends State<Home> {
                             style: kInfoTextStyle.copyWith(
                                 fontSize: 55, height: 1.1)),
                         onTap: () {
-                          if (widget.isRunning) {
+                          print(categories.sleep.toString());
+                          if (isRunning) {
                             showModalBottomSheet(
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,

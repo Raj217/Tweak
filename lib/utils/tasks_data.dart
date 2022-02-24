@@ -3,6 +3,8 @@ import 'package:tweak/utils/local_storage.dart';
 import 'package:tweak/widgets/task_tile.dart';
 import 'dart:convert';
 
+enum categories { work, sleep, rest, unregistered }
+
 class Tasks extends ChangeNotifier {
   List<TaskTile> _tasks = [];
   FileHandler fileHandler = FileHandler();
@@ -13,14 +15,70 @@ class Tasks extends ChangeNotifier {
     return _tasks;
   }
 
-  void addTask(TaskTile task) {
-    _tasks.add(task);
+  void addTask({required TaskTile task, bool trimCurrentTaskStartTime = true}) {
+    int len = _tasks.length;
+    if (len == 0) {
+      _tasks.add(task);
+    } else {
+      TaskTile lastTask = _tasks[len - 1];
+      Duration difference = task.startDateTime.difference(lastTask.endDateTime);
+      if (difference.inSeconds == 0) {
+        _tasks.add(task);
+      } else if (difference.inSeconds > 0) {
+        int index = len;
+        DateTime startDateTime = lastTask.endDateTime;
+        DateTime endDateTime = task.startDateTime;
+        String taskName = 'Unregistered Task';
+        String taskDesc = 'What you did in this period was not registered.';
+        String taskCategory = categories.unregistered.toString().substring(11);
+        _tasks.add(TaskTile(
+            index: index,
+            startDateTime: startDateTime,
+            endDateTime: endDateTime,
+            taskName: taskName,
+            taskDesc: taskDesc,
+            taskCategory: taskCategory));
+        _tasks.add((TaskTile(
+            index: task.index + 1,
+            startDateTime: task.startDateTime,
+            endDateTime: task.endDateTime,
+            taskName: task.taskName,
+            taskDesc: task.taskDesc,
+            taskCategory: task.taskCategory)));
+      } else {
+        if (trimCurrentTaskStartTime == true) {
+          _tasks.add((TaskTile(
+              index: task.index,
+              startDateTime: lastTask.endDateTime,
+              endDateTime: task.endDateTime,
+              taskName: task.taskName,
+              taskDesc: task.taskDesc,
+              taskCategory: task.taskCategory)));
+        } else {
+          editTask(
+              len - 1,
+              TaskTile(
+                  index: lastTask.index,
+                  startDateTime: lastTask.startDateTime,
+                  endDateTime: task.startDateTime,
+                  taskName: lastTask.taskName,
+                  taskDesc: lastTask.taskDesc,
+                  taskCategory: lastTask.taskCategory));
+          _tasks.add(task);
+        }
+      }
+    }
+
     _saveTasks();
     notifyListeners();
   }
 
   int get nTasks {
     return _tasks.length;
+  }
+
+  TaskTile get getLastTask {
+    return _tasks[_tasks.length - 1];
   }
 
   void sortTasks() {
@@ -49,6 +107,8 @@ class Tasks extends ChangeNotifier {
 
   void editTask(int index, TaskTile task) {
     _tasks[index] = task;
+    _saveTasks();
+    notifyListeners();
   }
 
   void _saveTasks() {
@@ -84,7 +144,7 @@ class Tasks extends ChangeNotifier {
 
       for (int i = 0; i < decodedData.length; i++) {
         addTask(
-          TaskTile(
+          task: TaskTile(
             index: int.parse(decodedData[i]['index']),
             startDateTime: DateTime.parse(decodedData[i]['startDateTime']),
             endDateTime: DateTime.parse(decodedData[i]['endDateTime']),

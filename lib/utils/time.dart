@@ -9,17 +9,21 @@ class Time extends ChangeNotifier {
   int _timeSleepPrevDay = 0;
   int _timeSleepCurrentDay = 0;
   int _timeRest = 0;
+  int _timeWaste = 0; //TODO: Implement it
   DateTime? _beginDateTime;
   int _timeWorkMin = 4; // 12:00 hr
   int _prevDaySleepTimeUpperLim = 28800; // 7:30 hr
   int _currentDaySleepTimeUpperLim = 3600; // 1 hour
   int _restTimeUpperLim = 10800; // 3 hr
+  int _wasteTimeUpperLim = 6000; // 1 hr
   String _workTimeUnitMajor = '';
   String _workTimeUnitMinor = '';
   String _sleepTimeUnitMajor = '';
   String _sleepTimeUnitMinor = '';
   String _restTimeUnitMajor = '';
   String _restTimeUnitMinor = '';
+  String _wasteTimeUnitMajor = '';
+  String _wasteTimeUnitMinor = '';
   String fileName = 'time.json';
   FileHandler fileHandler = FileHandler();
   DateTime _prevDateTime = DateTime(0);
@@ -66,6 +70,18 @@ class Time extends ChangeNotifier {
     return temp[1];
   }
 
+  String get getTimeWasteMajor {
+    List<String> temp = convSecsToString(secs: _timeWaste);
+    _wasteTimeUnitMajor = temp[2];
+    _wasteTimeUnitMinor = _wasteTimeUnitMajor == 'h' ? 'min' : 's';
+    return temp[0];
+  }
+
+  String get getTimeWasteMinor {
+    List<String> temp = convSecsToString(secs: _timeWaste);
+    return temp[1];
+  }
+
   DateTime get prevDateTime {
     return _prevDateTime;
   }
@@ -82,6 +98,10 @@ class Time extends ChangeNotifier {
     return '$getTimeRestMajor$_restTimeUnitMajor $getTimeRestMinor$_restTimeUnitMinor';
   }
 
+  String get getTimeWaste {
+    return '$getTimeWasteMajor$_wasteTimeUnitMajor $getTimeWasteMinor$_wasteTimeUnitMinor';
+  }
+
   String get getWorkTimeUnitMajor {
     return _workTimeUnitMajor;
   }
@@ -94,6 +114,10 @@ class Time extends ChangeNotifier {
     return _restTimeUnitMajor;
   }
 
+  String get getWasteTimeUnitMajor {
+    return _restTimeUnitMajor;
+  }
+
   String get getWorkTimeUnitMinor {
     return _workTimeUnitMinor;
   }
@@ -103,6 +127,10 @@ class Time extends ChangeNotifier {
   }
 
   String get getRestTimeUnitMinor {
+    return _restTimeUnitMinor;
+  }
+
+  String get getWasteTimeUnitMinor {
     return _restTimeUnitMinor;
   }
 
@@ -132,6 +160,10 @@ class Time extends ChangeNotifier {
 
   Color get getRestColor {
     return _restTimeUpperLim > _timeRest ? kGreen : kRed;
+  }
+
+  Color get getTimeWasteColor {
+    return _wasteTimeUpperLim > _timeWaste ? kGreen : kRed;
   }
 
   Color get getCurrentUserStateColor {
@@ -192,10 +224,18 @@ class Time extends ChangeNotifier {
     }
   }
 
-  void subtractSleepTime({required Duration duration, bool addToWork = true}) {
+  void subtractSleepTime(
+      {required Duration duration,
+      bool addToWork = true,
+      bool subtractPrevDay = false}) {
     if (duration.inSeconds > 0) {
-      _timeSleepCurrentDay -= duration.inSeconds;
-      _timeWork -= addToWork ? duration.inSeconds : 0;
+      if (subtractPrevDay) {
+        _timeSleepPrevDay -= duration.inSeconds;
+        _timeWork += addToWork ? duration.inSeconds : 0;
+      } else {
+        _timeSleepCurrentDay -= duration.inSeconds;
+        _timeWork -= addToWork ? duration.inSeconds : 0;
+      }
       _boundTimeAll();
       notifyListeners();
     }
@@ -214,8 +254,31 @@ class Time extends ChangeNotifier {
   void subtractRestTime({required Duration duration, bool addToWork = true}) {
     if (duration.inSeconds > 0) {
       _timeRest -= duration.inSeconds;
-      _timeWork -= addToWork ? duration.inSeconds : 0;
+      _timeWork += addToWork
+          ? (duration.inSeconds > 0 ? duration.inSeconds : -duration.inSeconds)
+          : 0;
       _timeWork = _timeWork > 86400 ? 86400 : _timeWork;
+      _boundTimeAll();
+      notifyListeners();
+    }
+  }
+
+  void addWasteTime(
+      {required Duration duration, bool subtractFromWork = true}) {
+    if (duration.inSeconds > 0) {
+      _timeWaste += duration.inSeconds;
+      _timeWork -= subtractFromWork ? duration.inSeconds : 0;
+      _boundTimeAll();
+      notifyListeners();
+    }
+  }
+
+  void subtractWasteTime({required Duration duration, bool addToWork = true}) {
+    if (duration.inSeconds > 0) {
+      _timeWaste -= duration.inSeconds;
+      _timeWork += addToWork
+          ? (duration.inSeconds > 0 ? duration.inSeconds : -duration.inSeconds)
+          : 0;
       _boundTimeAll();
       notifyListeners();
     }
@@ -252,6 +315,7 @@ class Time extends ChangeNotifier {
       'prevDaySleepTime': _timeSleepPrevDay.toString(),
       'currentDaySleepTime': '0',
       'restTime': '0',
+      'timeWaste': '0',
       'dayStarted': 'false'
     };
     await fileHandler.write(fileName: fileName, data: json.encode(data));
@@ -266,6 +330,7 @@ class Time extends ChangeNotifier {
       'prevDaySleepTime': _timeSleepPrevDay.toString(),
       'currentDaySleepTime': _timeSleepCurrentDay.toString(),
       'restTime': _timeRest.toString(),
+      'timeWaste': _timeWaste.toString(),
       'dayStarted': dayStarted.toString()
     };
     await fileHandler.write(fileName: fileName, data: json.encode(data));
@@ -280,6 +345,7 @@ class Time extends ChangeNotifier {
       _prevDateTime = DateTime.parse(dataDecoded['dateTime']);
       _timeSleepPrevDay = int.parse(dataDecoded['prevDaySleepTime']);
       _timeSleepCurrentDay = int.parse(dataDecoded['currentDaySleepTime']);
+      _timeWaste = int.parse(dataDecoded['timeWaste']);
       _timeRest = int.parse(dataDecoded['restTime']);
 
       bool dayStarted = dataDecoded['dayStarted'] == 'true' ? true : false;

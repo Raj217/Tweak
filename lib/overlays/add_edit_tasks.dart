@@ -33,6 +33,7 @@ class _AddEditTaskState extends State<AddEditTask> {
   Duration? duration;
   bool trimCurrentTaskStartTime = true;
   bool overlappingTasks = false;
+  bool addTaskOverlap = true; // For handling cancel
   final DateFormat timeExtractor = DateFormat('jm');
 
   @override
@@ -54,6 +55,8 @@ class _AddEditTaskState extends State<AddEditTask> {
     } else if (taskCategory ==
         categories.unregistered.toString().substring(11)) {
       taskName = 'Unregistered Task';
+    } else if (taskCategory == categories.timeWaste.toString().substring(11)) {
+      taskName = 'Time Waste';
     }
   }
 
@@ -82,6 +85,59 @@ class _AddEditTaskState extends State<AddEditTask> {
       startDateTime = dt ?? now;
       endDateTime = now;
     }
+  }
+
+  void manageTime() {
+    duration = duration ?? endDateTime!.difference(startDateTime!);
+    if (taskCategory == categories.sleep.toString().substring(11)) {
+      Provider.of<Time>(context, listen: false)
+          .addSleepTime(duration: duration!);
+    } else if (taskCategory == categories.rest.toString().substring(11)) {
+      Provider.of<Time>(context, listen: false)
+          .addRestTime(duration: duration!);
+    } else if (taskCategory == categories.timeWaste.toString().substring(11)) {
+      Provider.of<Time>(context, listen: false)
+          .addWasteTime(duration: duration!);
+    }
+  }
+
+  void addEditTask() {
+    if (addTaskOverlap) {
+      if (widget.edit == false) {
+        Provider.of<Tasks>(context, listen: false).addTask(
+          trimCurrentTaskStartTime: trimCurrentTaskStartTime,
+          task: TaskTile(
+            index: Provider.of<Tasks>(context, listen: false).nTasks,
+            startDateTime: startDateTime!,
+            endDateTime: endDateTime!,
+            taskName: taskName,
+            taskDesc: taskDesc,
+            taskCategory: taskCategory,
+            duration: duration,
+          ),
+        );
+      } else {
+        duration = endDateTime!.difference(startDateTime!);
+        Provider.of<Tasks>(context, listen: false).editTask(
+          index: widget.index,
+          trimCurrentTaskStartTime: trimCurrentTaskStartTime,
+          taskOverlapping: overlappingTasks,
+          task: TaskTile(
+            index: widget.index,
+            startDateTime: startDateTime!,
+            endDateTime: endDateTime!,
+            taskName: taskName,
+            taskDesc: taskDesc,
+            taskCategory: taskCategory,
+            duration: duration,
+          ),
+        );
+      }
+    }
+
+    trimCurrentTaskStartTime = true;
+    overlappingTasks = false;
+    addTaskOverlap = true;
   }
 
   @override
@@ -119,12 +175,29 @@ class _AddEditTaskState extends State<AddEditTask> {
                                       0) {
                                     endDateTime = startDateTime;
                                   }
-                                  TaskTile lastTask =
-                                      Provider.of<Tasks>(context, listen: false)
-                                          .getLastTask;
-                                  Duration diff = startDateTime!
-                                      .difference(lastTask.endDateTime);
-                                  overlappingTasks = true;
+                                  if (Provider.of<Tasks>(context, listen: false)
+                                          .nTasks >
+                                      0) {
+                                    TaskTile lastTask = Provider.of<Tasks>(
+                                            context,
+                                            listen: false)
+                                        .getLastTask;
+                                    Duration diff = startDateTime!
+                                        .difference(lastTask.endDateTime);
+                                    if (diff.inSeconds < 0) {
+                                      overlappingTasks = true;
+                                    }
+                                  } else {
+                                    DateTime beginDateTime = Provider.of<Time>(
+                                            context,
+                                            listen: false)
+                                        .getBeginDateTime!;
+                                    Provider.of<Time>(context, listen: false)
+                                        .subtractSleepTime(
+                                            duration: beginDateTime
+                                                .difference(startDateTime!),
+                                            subtractPrevDay: true);
+                                  }
                                 });
                               }),
                           Text(
@@ -205,6 +278,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                                   actions: [
                                     TextButton(
                                       onPressed: () {
+                                        addTaskOverlap = false;
                                         Navigator.pop(context);
                                       },
                                       child: Text(
@@ -237,49 +311,14 @@ class _AddEditTaskState extends State<AddEditTask> {
                                     )
                                   ]);
                             }).then((_) {
-                          duration = duration ??
-                              endDateTime!.difference(startDateTime!);
-                          if (taskCategory ==
-                              categories.sleep.toString().substring(11)) {
-                            Provider.of<Time>(context, listen: false)
-                                .addSleepTime(duration: duration!);
-                          } else if (taskCategory ==
-                              categories.sleep.toString().substring(11)) {
-                            Provider.of<Time>(context, listen: false)
-                                .addRestTime(duration: duration!);
-                          }
-                          if (widget.edit == false) {
-                            Provider.of<Tasks>(context, listen: false).addTask(
-                              trimCurrentTaskStartTime:
-                                  trimCurrentTaskStartTime,
-                              task: TaskTile(
-                                index:
-                                    Provider.of<Tasks>(context, listen: false)
-                                        .nTasks,
-                                startDateTime: startDateTime!,
-                                endDateTime: endDateTime!,
-                                taskName: taskName,
-                                taskDesc: taskDesc,
-                                taskCategory: taskCategory,
-                                duration: duration,
-                              ),
-                            );
-                          } else {
-                            Provider.of<Tasks>(context, listen: false).editTask(
-                              widget.index,
-                              TaskTile(
-                                index: widget.index,
-                                startDateTime: startDateTime!,
-                                endDateTime: endDateTime!,
-                                taskName: taskName,
-                                taskDesc: taskDesc,
-                                taskCategory: taskCategory,
-                                duration: duration,
-                              ),
-                            );
-                          }
+                          manageTime();
+                          addEditTask();
                           Navigator.pop(context);
                         });
+                      } else {
+                        manageTime();
+                        addEditTask();
+                        Navigator.pop(context);
                       }
                     },
                     textStyle: kButtonTextStyle.copyWith(fontSize: 16),

@@ -44,6 +44,8 @@ class TaskTile extends StatelessWidget {
       _baseColor = kGreen;
     } else if (taskCategory ==
         categories.unregistered.toString().substring(11)) {
+      _baseColor = kOrange;
+    } else if (taskCategory == categories.timeWaste.toString().substring(11)) {
       _baseColor = kRed;
     }
   }
@@ -160,6 +162,9 @@ class TaskTile extends StatelessWidget {
                                 } else if (taskCategory == 'rest') {
                                   Provider.of<Time>(context, listen: false)
                                       .subtractRestTime(duration: duration!);
+                                } else if (taskCategory == 'timeWaste') {
+                                  Provider.of<Time>(context, listen: false)
+                                      .subtractWasteTime(duration: duration!);
                                 }
                                 Provider.of<Tasks>(context, listen: false)
                                     .deleteTask(index);

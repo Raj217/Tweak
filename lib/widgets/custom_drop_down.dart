@@ -56,7 +56,17 @@ class _CustomDropDownState extends State<CustomDropDown> {
         onTap: () {
           widget.val = categories.unregistered.toString().substring(11);
         },
-      )
+      ),
+      DropdownMenuItem(
+        child: Text(
+          'time waste',
+          style: kInfoTextStyle.copyWith(color: kWhite),
+        ),
+        value: categories.timeWaste.toString().substring(11),
+        onTap: () {
+          widget.val = categories.timeWaste.toString().substring(11);
+        },
+      ),
     ];
 
     return DropdownButton(

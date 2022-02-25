@@ -3,7 +3,7 @@ import 'package:tweak/utils/local_storage.dart';
 import 'package:tweak/widgets/task_tile.dart';
 import 'dart:convert';
 
-enum categories { work, sleep, rest, unregistered }
+enum categories { work, sleep, rest, timeWaste, unregistered }
 
 class Tasks extends ChangeNotifier {
   List<TaskTile> _tasks = [];
@@ -13,6 +13,11 @@ class Tasks extends ChangeNotifier {
   List<TaskTile> get getTasks {
     sortTasks();
     return _tasks;
+  }
+
+  List<TaskTile> get getTasksInverted {
+    sortTasks();
+    return _tasks.reversed.toList();
   }
 
   void addTask({required TaskTile task, bool trimCurrentTaskStartTime = true}) {
@@ -56,8 +61,8 @@ class Tasks extends ChangeNotifier {
               taskCategory: task.taskCategory)));
         } else {
           editTask(
-              len - 1,
-              TaskTile(
+              index: len - 1,
+              task: TaskTile(
                   index: lastTask.index,
                   startDateTime: lastTask.startDateTime,
                   endDateTime: task.startDateTime,
@@ -102,11 +107,39 @@ class Tasks extends ChangeNotifier {
   void deleteTask(int index) {
     _tasks.removeAt(index);
     _reindex(index: index);
+    _saveTasks();
     notifyListeners();
   }
 
-  void editTask(int index, TaskTile task) {
-    _tasks[index] = task;
+  void editTask(
+      {required int index,
+      required TaskTile task,
+      bool trimCurrentTaskStartTime = true,
+      bool taskOverlapping = false}) {
+    if (!taskOverlapping) {
+      _tasks[index] = task;
+    } else {
+      TaskTile last2Task = _tasks[nTasks - 2];
+      if (trimCurrentTaskStartTime == true) {
+        _tasks[nTasks - 1] = TaskTile(
+            index: task.index,
+            startDateTime: last2Task.endDateTime,
+            endDateTime: task.endDateTime,
+            taskName: task.taskName,
+            taskDesc: task.taskDesc,
+            taskCategory: task.taskCategory);
+      } else {
+        _tasks[nTasks - 2] = TaskTile(
+            index: last2Task.index,
+            startDateTime: last2Task.startDateTime,
+            endDateTime: task.startDateTime,
+            taskName: last2Task.taskName,
+            taskDesc: last2Task.taskDesc,
+            taskCategory: last2Task.taskCategory);
+        _tasks[nTasks - 1] = task;
+      }
+    }
+
     _saveTasks();
     notifyListeners();
   }

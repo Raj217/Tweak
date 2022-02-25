@@ -141,6 +141,11 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
+                  GlowText(
+                    'time waste: ${Provider.of<Time>(context).getTimeWaste} ',
+                    style: kInfoTextStyle.copyWith(
+                        color: Provider.of<Time>(context).getTimeWasteColor),
+                  ),
                   const SizedBox(height: 20),
                   RoundedButton(
                     text: isRunning ? 'End' : 'Begin',
@@ -198,7 +203,8 @@ class _HomeState extends State<Home> {
               ),
               child: Padding(
                 padding: EdgeInsets.all(20.0),
-                child: Column(children: Provider.of<Tasks>(context).getTasks),
+                child: Column(
+                    children: Provider.of<Tasks>(context).getTasksInverted),
               ),
             ),
           ],

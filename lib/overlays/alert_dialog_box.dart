@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:provider/provider.dart';
-import 'package:tweak/utils/tasks_data.dart';
-import 'package:tweak/utils/time.dart';
+import 'package:tweak/classes/tasks_data.dart';
+import 'package:tweak/classes/time.dart';
 
 class AlertDialogBox extends StatelessWidget {
   AlertDialogBox({

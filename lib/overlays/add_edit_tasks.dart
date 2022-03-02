@@ -1,15 +1,17 @@
 import 'package:intl/intl.dart';
 import 'package:tweak/overlays/alert_dialog_box.dart';
-import 'package:tweak/utils/time.dart';
+import 'package:tweak/classes/time.dart';
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
-import 'package:tweak/utils/tasks_data.dart';
+import 'package:tweak/classes/tasks_data.dart';
 import 'package:tweak/widgets/custom_drop_down.dart';
 import 'package:tweak/widgets/custom_text_field.dart';
 import 'package:tweak/widgets/editable_time.dart';
 import 'package:tweak/widgets/rounded_button.dart';
 import 'package:tweak/widgets/task_tile.dart';
 import 'package:provider/provider.dart';
+import 'package:tweak/classes/categories.dart';
+import 'package:tweak/classes/category.dart';
 
 class AddEditTask extends StatefulWidget {
   AddEditTask({Key? key, bool this.edit = false, int this.index = 0})
@@ -26,16 +28,17 @@ class AddEditTask extends StatefulWidget {
 
 class _AddEditTaskState extends State<AddEditTask> {
   DateTime? startDateTime;
+  DateTime? beginDateTime;
   DateTime? endDateTime;
+  String taskCategory = 'work';
   String? taskName;
   String? taskDesc;
-  String taskCategory = 'work';
   Duration? duration;
   bool trimCurrentTaskStartTime = true;
   bool overlappingTasks = false;
   bool addTaskOverlap = true; // For handling cancel
   final DateFormat timeExtractor = DateFormat('jm');
-
+  late Map<String, Category> categories;
   @override
   void initState() {
     super.initState();
@@ -45,28 +48,11 @@ class _AddEditTaskState extends State<AddEditTask> {
     }
   }
 
-  void changeTaskName() {
-    if (taskCategory == categories.work.toString().substring(11)) {
-      taskName = 'Unknown Task';
-    } else if (taskCategory == categories.sleep.toString().substring(11)) {
-      taskName = 'Sleep';
-    } else if (taskCategory == categories.rest.toString().substring(11)) {
-      taskName = 'Rest';
-    } else if (taskCategory ==
-        categories.unregistered.toString().substring(11)) {
-      taskName = 'Unregistered Task';
-    } else if (taskCategory == categories.timeWaste.toString().substring(11)) {
-      taskName = 'Time Waste';
-    }
-  }
-
   void getTaskData() {
     TaskTile task =
         Provider.of<Tasks>(context, listen: false).getTasks[widget.index];
     startDateTime = task.startDateTime;
     endDateTime = task.endDateTime;
-    taskName = task.taskName;
-    taskDesc = task.taskDesc;
     taskCategory = task.taskCategory;
     duration = task.duration;
   }
@@ -81,23 +67,26 @@ class _AddEditTaskState extends State<AddEditTask> {
       DateTime dt = diff.inSeconds < 0 ? lastTask.endDateTime : now;
       endDateTime = dt;
     } else {
-      DateTime? dt = Provider.of<Time>(context, listen: false).getBeginDateTime;
-      startDateTime = dt ?? now;
+      Map<String, Category> categories =
+          Provider.of<Categories>(context, listen: false).getCategories;
+
+      DateTime dt = DateTime.now();
+      categories.forEach((key, value) {
+        if (key != 'sleep prev night') {
+          dt.subtract(value.getTimePassed);
+        }
+      });
+      beginDateTime = dt;
+      startDateTime = dt;
       endDateTime = now;
     }
   }
 
-  void manageTime() {
+  void manageTime(Map<String, Category> categories) {
     duration = duration ?? endDateTime!.difference(startDateTime!);
-    if (taskCategory == categories.sleep.toString().substring(11)) {
-      Provider.of<Time>(context, listen: false)
-          .addSleepTime(duration: duration!);
-    } else if (taskCategory == categories.rest.toString().substring(11)) {
-      Provider.of<Time>(context, listen: false)
-          .addRestTime(duration: duration!);
-    } else if (taskCategory == categories.timeWaste.toString().substring(11)) {
-      Provider.of<Time>(context, listen: false)
-          .addWasteTime(duration: duration!);
+    if (duration!.inSeconds > 0) {
+      categories[taskCategory]!.addTime(dt: duration!);
+      categories['work']!.subtractTime(dt: duration!);
     }
   }
 
@@ -110,10 +99,11 @@ class _AddEditTaskState extends State<AddEditTask> {
             index: Provider.of<Tasks>(context, listen: false).nTasks,
             startDateTime: startDateTime!,
             endDateTime: endDateTime!,
-            taskName: taskName,
-            taskDesc: taskDesc,
+            taskName: categories[taskCategory]!.getHintText,
+            taskDesc: categories[taskCategory]!.getHintDesc,
             taskCategory: taskCategory,
             duration: duration,
+            baseColor: categories[taskCategory]!.getCategoryColor,
           ),
         );
       } else {
@@ -126,10 +116,15 @@ class _AddEditTaskState extends State<AddEditTask> {
             index: widget.index,
             startDateTime: startDateTime!,
             endDateTime: endDateTime!,
-            taskName: taskName,
-            taskDesc: taskDesc,
+            taskName: taskCategory == 'sleep'
+                ? 'sleep'
+                : categories[taskCategory]!.getHintText,
+            taskDesc: taskCategory == 'sleep'
+                ? ''
+                : categories[taskCategory]!.getHintDesc,
             taskCategory: taskCategory,
             duration: duration,
+            baseColor: categories[taskCategory]!.getCategoryColor,
           ),
         );
       }
@@ -140,8 +135,33 @@ class _AddEditTaskState extends State<AddEditTask> {
     addTaskOverlap = true;
   }
 
+  List<DropdownMenuItem<String>> getItems() {
+    List<DropdownMenuItem<String>> items = [];
+    Iterable<String> categories =
+        Provider.of<Categories>(context).getCategories.keys;
+    for (int i = 0; i < categories.length; i++) {
+      if (i == 1) continue;
+      items.add(
+        DropdownMenuItem(
+          alignment: Alignment.center,
+          child: Text(
+            categories.elementAt(i),
+            style: kInfoTextStyle.copyWith(color: kWhite),
+          ),
+          value: categories.elementAt(i),
+          onTap: () {
+            taskCategory = categories.elementAt(i);
+          },
+        ),
+      );
+    }
+    return items;
+  }
+
   @override
   Widget build(BuildContext context) {
+    categories = Provider.of<Categories>(context).getCategories;
+
     return Center(
       child: SingleChildScrollView(
         child: IntrinsicHeight(
@@ -188,15 +208,11 @@ class _AddEditTaskState extends State<AddEditTask> {
                                       overlappingTasks = true;
                                     }
                                   } else {
-                                    DateTime beginDateTime = Provider.of<Time>(
-                                            context,
-                                            listen: false)
-                                        .getBeginDateTime!;
-                                    Provider.of<Time>(context, listen: false)
-                                        .subtractSleepTime(
-                                            duration: beginDateTime
-                                                .difference(startDateTime!),
-                                            subtractPrevDay: true);
+                                    beginDateTime;
+                                    categories['sleep prev night']!
+                                        .subtractTime(
+                                            dt: beginDateTime!
+                                                .difference(startDateTime!));
                                   }
                                 });
                               }),
@@ -234,11 +250,11 @@ class _AddEditTaskState extends State<AddEditTask> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: CustomDropDown(
+                        items: getItems(),
                         val: taskCategory,
                         onChanged: (val) {
                           setState(() {
                             taskCategory = val as String;
-                            changeTaskName();
                           });
                         }),
                   ),
@@ -311,12 +327,12 @@ class _AddEditTaskState extends State<AddEditTask> {
                                     )
                                   ]);
                             }).then((_) {
-                          manageTime();
+                          manageTime(categories);
                           addEditTask();
                           Navigator.pop(context);
                         });
                       } else {
-                        manageTime();
+                        manageTime(categories);
                         addEditTask();
                         Navigator.pop(context);
                       }

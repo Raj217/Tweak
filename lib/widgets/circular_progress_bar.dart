@@ -1,16 +1,22 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
+import 'package:tweak/classes/categories.dart';
+import 'package:tweak/classes/category.dart';
 import 'package:tweak/utils/constants.dart';
 import 'neumorphic_circle.dart';
 import 'package:provider/provider.dart';
-import 'package:tweak/utils/time.dart';
+import 'package:tweak/classes/time.dart';
 
 class CircularProgressBar extends StatefulWidget {
-  const CircularProgressBar({required this.radius, this.width = 20});
+  CircularProgressBar({required this.radius, this.width = 20});
 
   final double radius;
   final double width;
+  Duration time = Duration(seconds: 0);
 
   @override
   _CircularProgressBarState createState() => _CircularProgressBarState();
@@ -19,6 +25,9 @@ class CircularProgressBar extends StatefulWidget {
 class _CircularProgressBarState extends State<CircularProgressBar> {
   @override
   Widget build(BuildContext context) {
+    Category workData = Provider.of<Categories>(context).getCategories['work']!;
+    widget.time = workData.getTimePassed;
+    Provider.of<Categories>(context).saveCategories();
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -40,7 +49,7 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
             child: SleekCircularSlider(
               min: 0,
               max: 86400,
-              initialValue: Provider.of<Time>(context).getSecs,
+              initialValue: widget.time.inSeconds.toDouble(),
               appearance: CircularSliderAppearance(
                 size: 215,
                 angleRange: 360,
@@ -77,20 +86,26 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               GlowText(
-                Provider.of<Time>(context).getTimeWorkMajor,
+                (widget.time.inHours > 0
+                        ? widget.time.inHours
+                        : widget.time.inMinutes % 60)
+                    .toString(),
                 style: kInfoTextStyle.copyWith(fontSize: 35),
               ),
               GlowText(
-                Provider.of<Time>(context).getWorkTimeUnitMajor,
+                widget.time.inHours > 0 ? 'h' : 'min',
                 style: kInfoTextStyle,
               ),
               const SizedBox(width: 5),
               GlowText(
-                Provider.of<Time>(context).getTimeWorkMinor,
+                (widget.time.inHours > 0
+                        ? widget.time.inMinutes
+                        : widget.time.inSeconds % 60)
+                    .toString(),
                 style: kInfoTextStyle.copyWith(fontSize: 35),
               ),
               GlowText(
-                Provider.of<Time>(context).getWorkTimeUnitMinor,
+                widget.time.inHours > 0 ? 'min' : 's',
                 style: kInfoTextStyle,
               ),
             ],

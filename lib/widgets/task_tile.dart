@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:tweak/classes/categories.dart';
+import 'package:tweak/classes/category.dart';
 import 'package:tweak/overlays/add_edit_tasks.dart';
 import 'package:tweak/overlays/alert_dialog_box.dart';
 import 'package:tweak/overlays/showDesc.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:tweak/utils/tasks_data.dart';
-import 'package:tweak/utils/time.dart';
+import 'package:tweak/classes/tasks_data.dart';
+import 'package:tweak/classes/time.dart';
 
 class TaskTile extends StatelessWidget {
   TaskTile({
@@ -17,6 +19,7 @@ class TaskTile extends StatelessWidget {
     required this.taskName,
     required this.taskDesc,
     required this.taskCategory,
+    this.baseColor,
     this.duration,
   });
 
@@ -27,27 +30,11 @@ class TaskTile extends StatelessWidget {
   String? taskDesc;
   Duration? duration;
   String taskCategory;
-
-  Color _baseColor = kLightBlue;
+  Color? baseColor;
   final DateFormat timeExtractor = DateFormat('h:mm a');
 
   void setIndex(int i) {
     index = i;
-  }
-
-  void _setBaseColor() {
-    if (taskCategory == categories.work.toString().substring(11)) {
-      _baseColor = kLightBlue;
-    } else if (taskCategory == categories.sleep.toString().substring(11)) {
-      _baseColor = kYellow;
-    } else if (taskCategory == categories.rest.toString().substring(11)) {
-      _baseColor = kGreen;
-    } else if (taskCategory ==
-        categories.unregistered.toString().substring(11)) {
-      _baseColor = kOrange;
-    } else if (taskCategory == categories.timeWaste.toString().substring(11)) {
-      _baseColor = kRed;
-    }
   }
 
   void _setDuration() {
@@ -57,7 +44,9 @@ class TaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     _setDuration();
-    _setBaseColor();
+    baseColor ??= Provider.of<Categories>(context, listen: false)
+        .getCategories[taskCategory]!
+        .getCategoryColor;
     return GestureDetector(
       onDoubleTap: () {
         showModalBottomSheet(
@@ -88,11 +77,11 @@ class TaskTile extends StatelessWidget {
                               Text(
                                   '${timeExtractor.format(startDateTime)} - ${timeExtractor.format(endDateTime)}',
                                   style: kInfoTextStyle.copyWith(
-                                      color: _baseColor)),
+                                      color: baseColor)),
                               Text(
                                 Time.durationExtractor(duration!),
                                 style:
-                                    kInfoTextStyle.copyWith(color: _baseColor),
+                                    kInfoTextStyle.copyWith(color: baseColor),
                               )
                             ],
                           ),
@@ -108,7 +97,7 @@ class TaskTile extends StatelessWidget {
                               style: kInfoTextStyle.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 22,
-                                  color: _baseColor),
+                                  color: baseColor),
                             ),
                           ),
                         )
@@ -156,15 +145,14 @@ class TaskTile extends StatelessWidget {
                                       ]);
                                 }).then((val) {
                               if (deleteTask) {
-                                if (taskCategory == 'sleep') {
-                                  Provider.of<Time>(context, listen: false)
-                                      .subtractSleepTime(duration: duration!);
-                                } else if (taskCategory == 'rest') {
-                                  Provider.of<Time>(context, listen: false)
-                                      .subtractRestTime(duration: duration!);
-                                } else if (taskCategory == 'timeWaste') {
-                                  Provider.of<Time>(context, listen: false)
-                                      .subtractWasteTime(duration: duration!);
+                                if (duration!.inSeconds > 0) {
+                                  Map<String, Category> categories =
+                                      Provider.of<Categories>(context,
+                                              listen: false)
+                                          .getCategories;
+                                  categories[taskCategory]!
+                                      .subtractTime(dt: duration!);
+                                  categories['work']!.addTime(dt: duration!);
                                 }
                                 Provider.of<Tasks>(context, listen: false)
                                     .deleteTask(index);
@@ -174,7 +162,7 @@ class TaskTile extends StatelessWidget {
                           child: SvgPicture.asset(
                             '$kIconsPath/delete.svg',
                             height: 23,
-                            color: _baseColor,
+                            color: baseColor,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -186,10 +174,10 @@ class TaskTile extends StatelessWidget {
                               backgroundColor: Colors.transparent,
                               builder: (context) => ShowDesc(
                                 taskName: taskName ??
-                                    't', // TODO: Correct this and the next line as well
-                                taskDesc: taskDesc ?? 'no',
+                                    'Unknown Task', // TODO: Correct this and the next line as well
+                                taskDesc: taskDesc ?? '',
                                 taskCategory: taskCategory,
-                                catCol: _baseColor,
+                                catCol: baseColor ?? kLightBlue,
                               ),
                             );
                           },
@@ -201,14 +189,15 @@ class TaskTile extends StatelessWidget {
                                 width: 23,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: _baseColor, width: 2.5),
+                                  border: Border.all(
+                                      color: baseColor ?? kLightBlue,
+                                      width: 2.5),
                                 ),
                               ),
                               Text(
                                 'i',
                                 style: kInfoTextStyle.copyWith(
-                                    fontSize: 13, color: _baseColor),
+                                    fontSize: 13, color: baseColor),
                               )
                             ],
                           ),

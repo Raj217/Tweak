@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tweak/utils/constants.dart';
+import 'classes/category.dart';
 import 'screens/home.dart';
 import 'screens/loading_screen.dart';
 import 'package:provider/provider.dart';
-import 'utils/time.dart';
-import 'utils/tasks_data.dart';
+import 'classes/time.dart';
+import 'classes/tasks_data.dart';
+import 'classes/categories.dart';
 
 void main() {
   runApp(const Tweak());
@@ -26,6 +28,7 @@ class Tweak extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (BuildContext context) => Time()),
         ChangeNotifierProvider(create: (BuildContext context) => Tasks()),
+        ChangeNotifierProvider(create: (BuildContext context) => Categories())
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

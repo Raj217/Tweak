@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tweak/utils/constants.dart';
 import 'package:tweak/utils/local_storage.dart';
 import 'package:tweak/widgets/task_tile.dart';
 import 'dart:convert';
-
-enum categories { work, sleep, rest, timeWaste, unregistered }
 
 class Tasks extends ChangeNotifier {
   List<TaskTile> _tasks = [];
@@ -35,40 +34,48 @@ class Tasks extends ChangeNotifier {
         DateTime endDateTime = task.startDateTime;
         String taskName = 'Unregistered Task';
         String taskDesc = 'What you did in this period was not registered.';
-        String taskCategory = categories.unregistered.toString().substring(11);
+        String taskCategory = 'unregistered';
         _tasks.add(TaskTile(
-            index: index,
-            startDateTime: startDateTime,
-            endDateTime: endDateTime,
-            taskName: taskName,
-            taskDesc: taskDesc,
-            taskCategory: taskCategory));
+          index: index,
+          startDateTime: startDateTime,
+          endDateTime: endDateTime,
+          taskName: taskName,
+          taskDesc: taskDesc,
+          taskCategory: taskCategory,
+          baseColor: kRed,
+        ));
         _tasks.add((TaskTile(
-            index: task.index + 1,
-            startDateTime: task.startDateTime,
-            endDateTime: task.endDateTime,
-            taskName: task.taskName,
-            taskDesc: task.taskDesc,
-            taskCategory: task.taskCategory)));
+          index: task.index + 1,
+          startDateTime: task.startDateTime,
+          endDateTime: task.endDateTime,
+          taskName: task.taskName,
+          taskDesc: task.taskDesc,
+          taskCategory: task.taskCategory,
+          baseColor: task.baseColor,
+        )));
       } else {
         if (trimCurrentTaskStartTime == true) {
           _tasks.add((TaskTile(
-              index: task.index,
-              startDateTime: lastTask.endDateTime,
-              endDateTime: task.endDateTime,
-              taskName: task.taskName,
-              taskDesc: task.taskDesc,
-              taskCategory: task.taskCategory)));
+            index: task.index,
+            startDateTime: lastTask.endDateTime,
+            endDateTime: task.endDateTime,
+            taskName: task.taskName,
+            taskDesc: task.taskDesc,
+            taskCategory: task.taskCategory,
+            baseColor: task.baseColor,
+          )));
         } else {
           editTask(
               index: len - 1,
               task: TaskTile(
-                  index: lastTask.index,
-                  startDateTime: lastTask.startDateTime,
-                  endDateTime: task.startDateTime,
-                  taskName: lastTask.taskName,
-                  taskDesc: lastTask.taskDesc,
-                  taskCategory: lastTask.taskCategory));
+                index: lastTask.index,
+                startDateTime: lastTask.startDateTime,
+                endDateTime: task.startDateTime,
+                taskName: lastTask.taskName,
+                taskDesc: lastTask.taskDesc,
+                taskCategory: lastTask.taskCategory,
+                baseColor: lastTask.baseColor,
+              ));
           _tasks.add(task);
         }
       }
@@ -122,20 +129,24 @@ class Tasks extends ChangeNotifier {
       TaskTile last2Task = _tasks[nTasks - 2];
       if (trimCurrentTaskStartTime == true) {
         _tasks[nTasks - 1] = TaskTile(
-            index: task.index,
-            startDateTime: last2Task.endDateTime,
-            endDateTime: task.endDateTime,
-            taskName: task.taskName,
-            taskDesc: task.taskDesc,
-            taskCategory: task.taskCategory);
+          index: task.index,
+          startDateTime: last2Task.endDateTime,
+          endDateTime: task.endDateTime,
+          taskName: task.taskName,
+          taskDesc: task.taskDesc,
+          taskCategory: task.taskCategory,
+          baseColor: task.baseColor,
+        );
       } else {
         _tasks[nTasks - 2] = TaskTile(
-            index: last2Task.index,
-            startDateTime: last2Task.startDateTime,
-            endDateTime: task.startDateTime,
-            taskName: last2Task.taskName,
-            taskDesc: last2Task.taskDesc,
-            taskCategory: last2Task.taskCategory);
+          index: last2Task.index,
+          startDateTime: last2Task.startDateTime,
+          endDateTime: task.startDateTime,
+          taskName: last2Task.taskName,
+          taskDesc: last2Task.taskDesc,
+          taskCategory: last2Task.taskCategory,
+          baseColor: last2Task.baseColor,
+        );
         _tasks[nTasks - 1] = task;
       }
     }
@@ -162,7 +173,7 @@ class Tasks extends ChangeNotifier {
         'taskName': taskName,
         'taskDesc': taskDesc,
         'durationSecs': duration.inSeconds.toString(),
-        'taskCategory': taskCategory
+        'taskCategory': taskCategory,
       };
       tasksData.add(data);
     }

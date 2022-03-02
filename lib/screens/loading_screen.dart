@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:tweak/classes/categories.dart';
+import 'package:tweak/classes/category.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:tweak/widgets/logo_and_app_name.dart';
 import 'home.dart';
 import 'package:provider/provider.dart';
-import 'package:tweak/utils/time.dart';
-import 'package:tweak/utils/tasks_data.dart';
+import 'package:tweak/classes/time.dart';
+import 'package:tweak/classes/tasks_data.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({Key? key}) : super(key: key);
@@ -22,7 +24,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   void initState() {
     super.initState();
 
-    Provider.of<Time>(context, listen: false).readTime();
+    Provider.of<Categories>(context, listen: false).readCategories();
     Provider.of<Tasks>(context, listen: false).readTasks();
     controller = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 900))

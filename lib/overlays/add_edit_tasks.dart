@@ -1,6 +1,5 @@
 import 'package:intl/intl.dart';
 import 'package:tweak/overlays/alert_dialog_box.dart';
-import 'package:tweak/classes/time.dart';
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:tweak/classes/tasks_data.dart';
@@ -31,6 +30,7 @@ class _AddEditTaskState extends State<AddEditTask> {
   DateTime? beginDateTime;
   DateTime? endDateTime;
   String taskCategory = 'work';
+  String? prevTaskCategory;
   String? taskName;
   String? taskDesc;
   Duration? duration;
@@ -53,6 +53,7 @@ class _AddEditTaskState extends State<AddEditTask> {
         Provider.of<Tasks>(context, listen: false).getTasks[widget.index];
     startDateTime = task.startDateTime;
     endDateTime = task.endDateTime;
+    prevTaskCategory = task.taskCategory;
     taskCategory = task.taskCategory;
     duration = task.duration;
   }
@@ -76,8 +77,10 @@ class _AddEditTaskState extends State<AddEditTask> {
           dt.subtract(value.getTimePassed);
         }
       });
-      beginDateTime = dt;
-      startDateTime = dt;
+      beginDateTime =
+          Provider.of<Categories>(context, listen: false).getBeginDateTime;
+      startDateTime =
+          Provider.of<Categories>(context, listen: false).getBeginDateTime;
       endDateTime = now;
     }
   }
@@ -99,8 +102,8 @@ class _AddEditTaskState extends State<AddEditTask> {
             index: Provider.of<Tasks>(context, listen: false).nTasks,
             startDateTime: startDateTime!,
             endDateTime: endDateTime!,
-            taskName: categories[taskCategory]!.getHintText,
-            taskDesc: categories[taskCategory]!.getHintDesc,
+            taskName: taskName ?? categories[taskCategory]!.getHintText,
+            taskDesc: taskDesc ?? categories[taskCategory]!.getHintDesc,
             taskCategory: taskCategory,
             duration: duration,
             baseColor: categories[taskCategory]!.getCategoryColor,
@@ -108,6 +111,12 @@ class _AddEditTaskState extends State<AddEditTask> {
         );
       } else {
         duration = endDateTime!.difference(startDateTime!);
+        Provider.of<Categories>(context, listen: false)
+            .getCategories[prevTaskCategory]!
+            .subtractTime(dt: duration!);
+        Provider.of<Categories>(context, listen: false)
+            .getCategories[taskCategory]!
+            .addTime(dt: duration!);
         Provider.of<Tasks>(context, listen: false).editTask(
           index: widget.index,
           trimCurrentTaskStartTime: trimCurrentTaskStartTime,
@@ -116,12 +125,14 @@ class _AddEditTaskState extends State<AddEditTask> {
             index: widget.index,
             startDateTime: startDateTime!,
             endDateTime: endDateTime!,
-            taskName: taskCategory == 'sleep'
+            taskName: categories[taskCategory]!.getHintText,
+            taskDesc: categories[taskCategory]!.getHintDesc,
+            /*taskName: taskCategory == 'sleep'
                 ? 'sleep'
                 : categories[taskCategory]!.getHintText,
             taskDesc: taskCategory == 'sleep'
                 ? ''
-                : categories[taskCategory]!.getHintDesc,
+                : categories[taskCategory]!.getHintDesc,*/
             taskCategory: taskCategory,
             duration: duration,
             baseColor: categories[taskCategory]!.getCategoryColor,
@@ -156,6 +167,16 @@ class _AddEditTaskState extends State<AddEditTask> {
       );
     }
     return items;
+  }
+
+  String durationExtractor(Duration diff) {
+    if (diff.inHours > 0) {
+      return '${diff.inHours}h';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}min';
+    } else {
+      return '${diff.inSeconds}s';
+    }
   }
 
   @override
@@ -241,7 +262,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                         ],
                       ),
                       Text(
-                          Time.durationExtractor(
+                          durationExtractor(
                               endDateTime!.difference(startDateTime!)),
                           style: kInfoTextStyle.copyWith(
                               color: kWhite, fontWeight: FontWeight.w700))
@@ -327,12 +348,16 @@ class _AddEditTaskState extends State<AddEditTask> {
                                     )
                                   ]);
                             }).then((_) {
-                          manageTime(categories);
+                          if (widget.edit == false) {
+                            manageTime(categories);
+                          }
                           addEditTask();
                           Navigator.pop(context);
                         });
                       } else {
-                        manageTime(categories);
+                        if (widget.edit == false) {
+                          manageTime(categories);
+                        }
                         addEditTask();
                         Navigator.pop(context);
                       }

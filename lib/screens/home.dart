@@ -12,7 +12,6 @@ import 'package:tweak/widgets/logo_and_app_name.dart';
 import 'package:tweak/widgets/rounded_button.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:provider/provider.dart';
-import 'package:tweak/classes/time.dart';
 import 'package:tweak/classes/tasks_data.dart';
 
 class Home extends StatefulWidget {
@@ -29,53 +28,66 @@ class _HomeState extends State<Home> {
   bool optionsType = true;
   List<TextButton>? actions;
   bool isRunning = false;
-  String taskCategory = 'time waste';
+  String taskCategory = 'sleep prev night';
 
   @override
   void initState() {
     super.initState();
-    Category work =
-        Provider.of<Categories>(context, listen: false).getCategories['work']!;
-    isRunning = work.isRunning;
-    if (isRunning) {
-      work.startTimer(func: () {
-        setState(() {});
-      });
+    isRunning = Provider.of<Categories>(context, listen: false)
+        .getCategories['work']!
+        .isRunning;
+    String cat = 'work';
+    if (!isRunning) {
+      cat = 'sleep prev night';
     }
+    Provider.of<Categories>(context, listen: false)
+        .getCategories[cat]!
+        .startTimerBool();
+    Provider.of<Categories>(context, listen: false)
+        .getCategories[cat]!
+        .startTimer(func: () {
+      setState(() {});
+    });
   }
 
   void continueDay() {
     setState(() {
       isRunning = !isRunning;
       Provider.of<Categories>(context, listen: false).readCategories();
-      Provider.of<Categories>(context, listen: false)
-          .getCategories['work']!
-          .startTimer(func: () {
-        setState(() {});
-      });
+      Provider.of<Categories>(context, listen: false).toggleCategories(
+          cat1: 'work',
+          cat2: 'sleep prev night',
+          startTimerFunc: () {
+            setState(() {});
+          });
     });
   }
 
   void startEndButtonOnPressed() {
-    setState(() {
-      isRunning = !isRunning;
-      isRunning
-          ? Provider.of<Categories>(context, listen: false)
-              .getCategories['work']!
-              .startTimer(func: () {
-              setState(() {});
-            })
-          : Provider.of<Categories>(context, listen: false)
-              .getCategories['work']!
-              .endTimer();
-    });
+    isRunning = !isRunning;
+    bool resetTime1 = false;
+    bool resetTime2 = false;
+    if (isRunning) {
+      resetTime1 = true;
+      Provider.of<Categories>(context, listen: false).resetAllTime();
+    } else {
+      resetTime2 = true;
+    }
+    Provider.of<Categories>(context, listen: false).toggleCategories(
+        cat1: 'work',
+        cat2: 'sleep prev night',
+        startTimerFunc: () {
+          setState(() {});
+        },
+        resetTime1: resetTime1,
+        resetTime2: resetTime2);
   }
 
   void getValuesForAlertBox() {
     bool isEndable = Provider.of<Categories>(context, listen: false)
         .getCategories['work']!
         .didExceed(dirnUp: false);
-    if (!isEndable && isRunning) {
+    if (isEndable && isRunning) {
       alertBoxTextTitle = 'Warning';
       alertBoxTextContent =
           'You have not finished your minimum day limit so you cannot end it.';
@@ -92,7 +104,7 @@ class _HomeState extends State<Home> {
         )
       ];
     } else if (!isRunning &&
-        Provider.of<Categories>(context, listen: false)
+        !Provider.of<Categories>(context, listen: false)
             .getCategories['sleep prev night']!
             .didExceed(dirnUp: false)) {
       alertBoxTextTitle = 'Note';
@@ -135,6 +147,7 @@ class _HomeState extends State<Home> {
             if (!isRunning) {
               Provider.of<Tasks>(context, listen: false).deleteAllTasks();
             }
+            Provider.of<Categories>(context, listen: false).saveBeginTimeData();
             Navigator.of(context).pop();
             startEndButtonOnPressed();
           },
@@ -190,12 +203,12 @@ class _HomeState extends State<Home> {
                   CircularProgressBar(radius: 220),
                   const SizedBox(height: 20),
                   GlowText(
-                    Provider.of<Time>(context).getCurrentUserState,
+                    Provider.of<Categories>(context).getCurrentUserState,
                     style: kInfoTextStyle.copyWith(
                         fontSize: 30,
                         color: Provider.of<Categories>(context)
-                            .getCategories[
-                                Provider.of<Time>(context).getCurrentUserState]!
+                            .getCategories[Provider.of<Categories>(context)
+                                .getCurrentUserState]!
                             .getCategoryColor),
                   ),
                   Row(
@@ -211,27 +224,6 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
-
-                  /* Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      GlowText(
-                        'sleep: ${Category().getTimeFormatted(categories['sleep']! + categories['sleep prev day']!)} ',
-                        style: kInfoTextStyle.copyWith(
-                            color: Provider.of<Time>(context).getSleepColor),
-                      ),
-                      GlowText(
-                        'rest: ${Provider.of<Time>(context).getTimeRest}',
-                        style: kInfoTextStyle.copyWith(
-                            color: Provider.of<Time>(context).getRestColor),
-                      ),
-                    ],
-                  ),
-                  GlowText(
-                    'time waste: ${Provider.of<Time>(context).getTimeWaste} ',
-                    style: kInfoTextStyle.copyWith(
-                        color: Provider.of<Time>(context).getTimeWasteColor),
-                  ),*/ //TODO: DropDown
                   const SizedBox(height: 20),
                   RoundedButton(
                     text: isRunning ? 'End' : 'Begin',

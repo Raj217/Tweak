@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tweak/classes/categories.dart';
-import 'package:tweak/classes/category.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:tweak/widgets/logo_and_app_name.dart';
 import 'home.dart';
 import 'package:provider/provider.dart';
-import 'package:tweak/classes/time.dart';
 import 'package:tweak/classes/tasks_data.dart';
 
 class LoadingScreen extends StatefulWidget {

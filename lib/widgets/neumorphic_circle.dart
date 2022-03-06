@@ -2,7 +2,6 @@ import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:tweak/utils/constants.dart';
 
 class NeumorphicCircle extends StatelessWidget {
-
   const NeumorphicCircle({
     required this.size,
     required this.shape,

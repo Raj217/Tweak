@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tweak/utils/constants.dart';
-import 'classes/category.dart';
 import 'screens/home.dart';
 import 'screens/loading_screen.dart';
 import 'package:provider/provider.dart';
-import 'classes/time.dart';
 import 'classes/tasks_data.dart';
 import 'classes/categories.dart';
 
@@ -26,7 +24,6 @@ class Tweak extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (BuildContext context) => Time()),
         ChangeNotifierProvider(create: (BuildContext context) => Tasks()),
         ChangeNotifierProvider(create: (BuildContext context) => Categories())
       ],

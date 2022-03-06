@@ -9,7 +9,6 @@ import 'package:tweak/overlays/showDesc.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tweak/classes/tasks_data.dart';
-import 'package:tweak/classes/time.dart';
 
 class TaskTile extends StatelessWidget {
   TaskTile({
@@ -39,6 +38,16 @@ class TaskTile extends StatelessWidget {
 
   void _setDuration() {
     duration = duration ?? endDateTime.difference(startDateTime);
+  }
+
+  String durationExtractor(Duration diff) {
+    if (diff.inHours > 0) {
+      return '${diff.inHours}h';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}min';
+    } else {
+      return '${diff.inSeconds}s';
+    }
   }
 
   @override
@@ -79,7 +88,7 @@ class TaskTile extends StatelessWidget {
                                   style: kInfoTextStyle.copyWith(
                                       color: baseColor)),
                               Text(
-                                Time.durationExtractor(duration!),
+                                durationExtractor(duration!),
                                 style:
                                     kInfoTextStyle.copyWith(color: baseColor),
                               )

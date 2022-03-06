@@ -1,15 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'package:tweak/classes/categories.dart';
-import 'package:tweak/classes/category.dart';
 import 'package:tweak/utils/constants.dart';
 import 'neumorphic_circle.dart';
 import 'package:provider/provider.dart';
-import 'package:tweak/classes/time.dart';
 
 class CircularProgressBar extends StatefulWidget {
   CircularProgressBar({required this.radius, this.width = 20});
@@ -25,9 +21,13 @@ class CircularProgressBar extends StatefulWidget {
 class _CircularProgressBarState extends State<CircularProgressBar> {
   @override
   Widget build(BuildContext context) {
-    Category workData = Provider.of<Categories>(context).getCategories['work']!;
-    widget.time = workData.getTimePassed;
-    Provider.of<Categories>(context).saveCategories();
+    // Category workData = Provider.of<Categories>(context).getCategories['work']!;
+    // widget.time = workData.getTimePassed;
+    setState(() {
+      widget.time =
+          Provider.of<Categories>(context).getCategories['work']!.getTimePassed;
+      Provider.of<Categories>(context).saveCategories();
+    });
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -99,7 +99,7 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
               const SizedBox(width: 5),
               GlowText(
                 (widget.time.inHours > 0
-                        ? widget.time.inMinutes
+                        ? widget.time.inMinutes % 60
                         : widget.time.inSeconds % 60)
                     .toString(),
                 style: kInfoTextStyle.copyWith(fontSize: 35),

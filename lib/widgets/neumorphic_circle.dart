@@ -22,9 +22,9 @@ class NeumorphicCircle extends StatelessWidget {
       child: Neumorphic(
         style: NeumorphicStyle(
           shape: shape,
-          color: kDarkBlue,
-          shadowDarkColor: const Color(0xFF10121a),
-          shadowLightColor: const Color(0xff3f4766),
+          color: kDarkBackgroundColor,
+          shadowDarkColor: kNeumorphicShadowDark,
+          shadowLightColor: kNeumorphicShadowLight,
           boxShape: const NeumorphicBoxShape.circle(),
           depth: depth,
           intensity: intensity,

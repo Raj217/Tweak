@@ -14,19 +14,18 @@ class Categories extends ChangeNotifier {
   FileHandler fileHandler = FileHandler();
   final Map<String, Category> _categories = {
     'work': Category(
-        id: 'work',
-        lowerLim: const Duration(seconds: 0),
-        upperLim: const Duration(hours: 24),
-        hintText: 'Unknown Task', // 12:00hr
-        boundUpperLim: '1'),
-    'sleep prev night': Category(
-      id: 'sleep prev night',
-      cat: 'sleep previous night',
-      lowerLim: const Duration(seconds: 12600), // 3:30 hr
-      upperLim: const Duration(seconds: 25200), // 7 hr
-      baseColor: kYellow,
-      hintText: 'Sleep',
+      id: 'work',
+      lowerLim: const Duration(seconds: 0),
+      hintText: 'Unknown Task', // 12:00hr
     ),
+    'sleep prev night': Category(
+        id: 'sleep prev night',
+        cat: 'sleep previous night',
+        lowerLim: const Duration(seconds: 12600), // 3:30 hr
+        upperLim: const Duration(seconds: 25200), // 7 hr
+        baseColor: kYellow,
+        hintText: 'Sleep',
+        bias: Duration(minutes: 5)),
     'sleep current day': Category(
       // Default sleep
       id: 'sleep current day',
@@ -128,7 +127,11 @@ class Categories extends ChangeNotifier {
   }
 
   void readCategories() async {
+    await _readBeginTimeData();
     if (await fileHandler.fileExists(fileName: fileName)) {
+      late DateTime workTime;
+      late DateTime sleepPrevNightTime;
+      late DateTime dt;
       dynamic dataDecoded =
           json.decode(await fileHandler.readData(fileName: fileName));
       dataDecoded.forEach((key, value) {
@@ -144,13 +147,19 @@ class Categories extends ChangeNotifier {
             hintText: value[8],
             hintDesc: value[9],
             run: value[10]);
+        if (key == 'work') {
+          workTime = DateTime.parse(value[2]);
+        } else if (key == 'sleep prev night') {
+          sleepPrevNightTime = DateTime.parse(value[2]);
+        }
       });
+      String cat = 'work';
+      dt = workTime;
+      if (!_categories['work']!.isRunning) {
+        cat = 'sleep prev night';
+        dt = sleepPrevNightTime;
+      }
+      _categories[cat]!.addTime(dt: DateTime.now().difference(dt));
     }
-    await _readBeginTimeData();
-    String cat = 'work';
-    if (!_categories['work']!.isRunning) {
-      cat = 'sleep prev night';
-    }
-    _categories[cat]!.addTime(dt: DateTime.now().difference(beginDateTime));
   }
 }

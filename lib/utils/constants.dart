@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:tweak/utils/color_helper.dart';
+
+// --------------- App Constants ---------------
+const Color kBaseColor = kLightBlue;
+final Color kDarkBackgroundColor =
+    ColorHelper.getCounterDarkColor(color: kLightBlue);
+const Color kBGGrayTranslucent = kGrayTranslucent;
+const Color kNeumorphicShadowDark = Color(0xFF10121A);
+const Color kNeumorphicShadowLight = Color(0xFF3F4766);
+
+// --------------- TextStyle ---------------
+const TextStyle kInfoTextStyle =
+    TextStyle(fontFamily: 'MohrRounded', color: kBaseColor);
+final TextStyle kButtonTextStyle =
+    TextStyle(fontFamily: 'MohrRounded', color: kDarkBackgroundColor);
 
 // --------------- Color ---------------
 const Color kDarkBlue = Color(0xFF1D202D);
 const Color kLightBlue = Color(0xFF72DDFD);
-const Color kViolet = Color(0xFF726DFC);
 const Color kGreen = Color(0xFF5DFE69);
 const Color kYellow = Color(0xFFF8FE5D);
 const Color kOrange = Color(0xFFFFB329);
@@ -17,9 +31,3 @@ const Color kWhite = Color(0xFFEAEBED);
 
 // --------------- Path ---------------
 const String kIconsPath = 'assets/icons';
-
-// --------------- TextStyle ---------------
-const TextStyle kInfoTextStyle =
-    TextStyle(fontFamily: 'MohrRounded', color: kLightBlue);
-const TextStyle kButtonTextStyle =
-    TextStyle(fontFamily: 'MohrRounded', color: kDarkBlue);

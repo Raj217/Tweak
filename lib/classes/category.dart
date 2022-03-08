@@ -16,7 +16,7 @@ class Category extends ChangeNotifier {
   String _hintText = 'Unknown Task';
   String _hintDesc = '';
   String _run = '0'; // 0: false, 1: true
-  String _boundUpperLim = '0';
+  Duration _bias = Duration(seconds: 0);
   // -------------------------------- Constants --------------------------------
   final DateFormat dfDateExtractor = DateFormat('EEE MMM d, yyyy');
 
@@ -33,7 +33,7 @@ class Category extends ChangeNotifier {
       String? hintText,
       String? hintDesc,
       String? run,
-      String? boundUpperLim}) {
+      Duration? bias}) {
     _id = id ?? '';
     _cat = cat ?? '';
     _time = baseTime ?? _time;
@@ -45,7 +45,7 @@ class Category extends ChangeNotifier {
     _hintText = hintText ?? _hintText;
     _hintDesc = hintDesc ?? _hintDesc;
     _run = run ?? _run;
-    _boundUpperLim = boundUpperLim ?? _boundUpperLim;
+    _bias = bias ?? _bias;
   }
 
   // --------------------------- Operator Overloading ---------------------------
@@ -109,7 +109,8 @@ class Category extends ChangeNotifier {
       _overTimeColor.toString().substring(6, 16),
       _hintText,
       _hintDesc,
-      _run
+      _run,
+      _bias.inSeconds.toString()
     ];
   }
 
@@ -133,21 +134,13 @@ class Category extends ChangeNotifier {
 
   void addTime({Duration dt = const Duration(seconds: 1)}) {
     // By default 1 sec is added
-    _time = getTimePassed >= _upperLim && _boundUpperLim == '1'
-        ? _time
-        : _time.add(dt);
-    _boundTime();
+    _time = _time.add(dt);
+    //_boundTime();
     notifyListeners();
   }
 
   void startTimerBool() {
     _run = '1';
-  }
-
-  void subtractBeginTime({Duration dt = const Duration(seconds: 1)}) {
-    // By default 1 sec is added
-    _beginTime = _beginTime.add(dt);
-    notifyListeners();
   }
 
   void subtractTime({required Duration dt}) {
@@ -177,7 +170,7 @@ class Category extends ChangeNotifier {
   }
 
   void resetTime() {
-    _beginTime = _time;
+    _beginTime = _time.add(_bias);
   }
 
   void setUpperLim(Duration duration) {
@@ -204,10 +197,12 @@ class Category extends ChangeNotifier {
         upperLim: Duration(seconds: int.parse(data[5])),
         baseColor: baseColor,
         overTimeColor: overTimeColor,
-        run: data[6]);
+        run: data[6],
+        bias: Duration(seconds: int.parse(data[7])));
   }
 
   // ----------------------------- Private Methods -----------------------------
+  /*
   void _boundTime() {
     if (didExceed()) {
       _time = _beginTime.add(_upperLim - Duration(seconds: 1));
@@ -216,4 +211,5 @@ class Category extends ChangeNotifier {
       _time = _beginTime.add(const Duration(seconds: 0));
     }
   }
+  */
 }

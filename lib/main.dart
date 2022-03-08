@@ -1,3 +1,11 @@
+/// TWEAK
+/// v: 1.0.0
+///
+/// Made by: Rajdristant Ghose
+///
+/// This app helps in tracking your day to day activities and helping you analyze
+/// where you used your time, to manage your time in a better manner
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tweak/utils/constants.dart';
@@ -10,9 +18,9 @@ import 'classes/categories.dart';
 void main() {
   runApp(const Tweak());
   SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: kDarkBlue,
-      systemNavigationBarColor: kDarkBlue,
+    SystemUiOverlayStyle(
+      statusBarColor: kDarkBackgroundColor,
+      systemNavigationBarColor: kDarkBackgroundColor,
     ),
   );
 }
@@ -32,7 +40,7 @@ class Tweak extends StatelessWidget {
         theme: ThemeData.dark(),
         initialRoute: LoadingScreen.id,
         routes: {
-          LoadingScreen.id: (context) => const LoadingScreen(),
+          LoadingScreen.id: (context) => LoadingScreen(),
           Home.id: (context) => const Home(),
         },
       ),

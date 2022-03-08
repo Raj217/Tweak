@@ -1,3 +1,8 @@
+/// Show the task name, task Description of a task along with the task's color
+/// as the boundary
+///
+/// Ratio of task Name: Task Desc = 2:7
+
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
 
@@ -13,16 +18,20 @@ class ShowDesc extends StatelessWidget {
   final String taskDesc;
   final Color catCol;
 
+  // Constants
+  final double side = 250;
+  final double borderWidth = 3;
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        height: 250,
-        width: 250,
+        height: side,
+        width: side,
         decoration: BoxDecoration(
             color: kDarkBlue,
             borderRadius: const BorderRadius.all(Radius.circular(20)),
-            border: Border.all(color: catCol, width: 3)),
+            border: Border.all(color: catCol, width: borderWidth)),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -34,12 +43,13 @@ class ShowDesc extends StatelessWidget {
                   width: double.infinity,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
-                    color: kGrayTranslucent,
+                    color: kBGGrayTranslucent,
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15.0),
                     child: SingleChildScrollView(
+                      // To scroll the name in horizontal direction
                       scrollDirection: Axis.horizontal,
                       child: Text(
                         taskName,
@@ -57,12 +67,13 @@ class ShowDesc extends StatelessWidget {
                   width: double.infinity,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
-                    color: kGrayTranslucent,
+                    color: kBGGrayTranslucent,
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(15.0),
                     child: SingleChildScrollView(
+                      // To scroll the description in vertical direction
                       child: Text(
                         taskDesc,
                         textAlign: TextAlign.center,

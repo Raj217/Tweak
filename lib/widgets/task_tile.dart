@@ -137,7 +137,7 @@ class TaskTile extends StatelessWidget {
                                           child: Text(
                                             'Cancel',
                                             style: kInfoTextStyle.copyWith(
-                                                color: kLightBlue),
+                                                color: kBaseColor),
                                           ),
                                         ),
                                         TextButton(
@@ -186,7 +186,7 @@ class TaskTile extends StatelessWidget {
                                     'Unknown Task', // TODO: Correct this and the next line as well
                                 taskDesc: taskDesc ?? '',
                                 taskCategory: taskCategory,
-                                catCol: baseColor ?? kLightBlue,
+                                catCol: baseColor ?? kBaseColor,
                               ),
                             );
                           },
@@ -199,7 +199,7 @@ class TaskTile extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: baseColor ?? kLightBlue,
+                                      color: baseColor ?? kBaseColor,
                                       width: 2.5),
                                 ),
                               ),

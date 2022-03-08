@@ -1,3 +1,5 @@
+/// Logo and app name
+
 import 'package:flutter/material.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'app_icons.dart';
@@ -12,8 +14,8 @@ Row logoAndAppName(
     children: [
       GlowIcon(
         MyFlutterApp.logo,
-        color: kLightBlue,
-        glowColor: kLightBlue,
+        color: kBaseColor,
+        glowColor: kBaseColor,
         size: iconSize,
       ),
       SizedBox(
@@ -23,7 +25,7 @@ Row logoAndAppName(
         'TWEAK',
         textAlign: TextAlign.center,
         style: TextStyle(
-            color: kLightBlue,
+            color: kBaseColor,
             fontFamily: 'Nomark',
             fontSize: fontSize,
             decoration: TextDecoration.none),

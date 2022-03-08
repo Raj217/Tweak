@@ -8,26 +8,28 @@ class CustomTextField extends StatelessWidget {
       this.hintText,
       this.maxLines = 1,
       this.verticalPadding = 10,
-      this.initVal})
+      this.initTextVal})
       : super(key: key);
 
   final void Function(String)? onChanged;
   final String? hintText;
-  final int maxLines;
+  final int
+      maxLines; // Increase the height and also adds text in next line when overflows
   final double verticalPadding;
-  final String? initVal;
+  final String? initTextVal;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-          color: kGrayTranslucentBG,
-          borderRadius: BorderRadius.all(Radius.circular(15))),
+        color: kGrayTranslucentBG,
+        borderRadius: BorderRadius.all(Radius.circular(15)),
+      ),
       child: Padding(
         padding:
             EdgeInsets.symmetric(horizontal: 15.0, vertical: verticalPadding),
         child: TextFormField(
-          initialValue: initVal,
+          initialValue: initTextVal,
           textAlign: TextAlign.center,
           cursorColor: kGrayTranslucentText,
           onChanged: onChanged,

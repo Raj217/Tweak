@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+/// Circular Progress Bar
+
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'package:tweak/classes/categories.dart';
+import 'package:tweak/utils/color_helper.dart';
 import 'package:tweak/utils/constants.dart';
 import 'neumorphic_circle.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +14,12 @@ class CircularProgressBar extends StatefulWidget {
 
   final double radius;
   final double width;
-  Duration time = Duration(seconds: 0);
+  Duration time = const Duration(seconds: 0);
+
+  List<Color> gradientColor = [
+    kLightBlue,
+    ColorHelper.getCounterForwardColor(color: kLightBlue)
+  ];
 
   @override
   _CircularProgressBarState createState() => _CircularProgressBarState();
@@ -21,22 +28,33 @@ class CircularProgressBar extends StatefulWidget {
 class _CircularProgressBarState extends State<CircularProgressBar> {
   @override
   Widget build(BuildContext context) {
-    // Category workData = Provider.of<Categories>(context).getCategories['work']!;
-    // widget.time = workData.getTimePassed;
+    double progress = 0; // The value for the progressBar
     setState(() {
       widget.time =
           Provider.of<Categories>(context).getCategories['work']!.getTimePassed;
       Provider.of<Categories>(context).saveCategories();
+      double temp = widget.time.inSeconds.toDouble();
+      if (temp < 86400) {
+        if (temp < 0) {
+          progress = 0;
+        } else {
+          progress = temp;
+        }
+      } else {
+        progress = 86400;
+      }
     });
     return Stack(
       alignment: Alignment.center,
       children: [
         NeumorphicCircle(
+          // Outer Circle
           size: widget.radius,
           shape: NeumorphicShape.concave,
           intensity: 0.9,
         ),
         NeumorphicCircle(
+          // Inner Circle
           size: widget.radius,
           shape: NeumorphicShape.convex,
           intensity: 0.3,
@@ -47,9 +65,10 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
           child: SizedBox(
             height: widget.radius,
             child: SleekCircularSlider(
+              // Circular Progress Bar
               min: 0,
               max: 86400,
-              initialValue: widget.time.inSeconds.toDouble(),
+              initialValue: progress,
               appearance: CircularSliderAppearance(
                 size: 215,
                 angleRange: 360,
@@ -58,7 +77,7 @@ class _CircularProgressBarState extends State<CircularProgressBar> {
                   mainLabelStyle: const TextStyle(color: Colors.transparent),
                 ),
                 customColors: CustomSliderColors(
-                  progressBarColors: [kLightBlue, kViolet],
+                  progressBarColors: widget.gradientColor,
                   trackColor: Colors.transparent,
                 ),
                 customWidths: CustomSliderWidths(

@@ -281,7 +281,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                   ),
                   CustomTextField(
                     hintText: 'Task name...',
-                    initVal: taskName,
+                    initTextVal: taskName,
                     verticalPadding: 3,
                     onChanged: (text) {
                       setState(() {
@@ -292,7 +292,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                   const SizedBox(height: 10),
                   CustomTextField(
                     hintText: 'Task Description...',
-                    initVal: taskDesc,
+                    initTextVal: taskDesc,
                     maxLines: 6,
                     onChanged: (text) {
                       setState(() {
@@ -321,7 +321,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                                       child: Text(
                                         'Cancel',
                                         style: kInfoTextStyle.copyWith(
-                                            color: kLightBlue),
+                                            color: kBaseColor),
                                       ),
                                     ),
                                     TextButton(
@@ -332,7 +332,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                                       child: Text(
                                         'Current Task',
                                         style: kInfoTextStyle.copyWith(
-                                            color: kLightBlue),
+                                            color: kBaseColor),
                                       ),
                                     ),
                                     TextButton(
@@ -343,7 +343,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                                       child: Text(
                                         'Prev Task',
                                         style: kInfoTextStyle.copyWith(
-                                            color: kLightBlue),
+                                            color: kBaseColor),
                                       ),
                                     )
                                   ]);

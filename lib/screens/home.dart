@@ -1,8 +1,11 @@
+/// The main screen of TWEAK
+
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:tweak/classes/categories.dart';
 import 'package:tweak/classes/category.dart';
 import 'package:tweak/overlays/add_edit_tasks.dart';
+import 'package:tweak/utils/color_helper.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:tweak/overlays/alert_dialog_box.dart';
@@ -23,34 +26,49 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  /// Title of the alertBox overlay
   String? alertBoxTextTitle;
-  String? alertBoxTextContent;
-  bool optionsType = true;
+
+  /// Description of the alertBox overlay
+  String? alertBoxTextDesc;
+
+  /// The buttons on the alertBox overlay
   List<TextButton>? actions;
+
+  /// Is work timer running?
   bool isRunning = false;
+
+  /// The current task category which is shown below the circular progress bar
   String taskCategory = 'sleep prev night';
 
   @override
   void initState() {
     super.initState();
+
     isRunning = Provider.of<Categories>(context, listen: false)
         .getCategories['work']!
         .isRunning;
-    String cat = 'work';
+
+    String tempCat = 'work';
     if (!isRunning) {
-      cat = 'sleep prev night';
+      tempCat = 'sleep prev night';
     }
+
+    /// Start work/sleep prev night timer, whichever one was running before closing the app
     Provider.of<Categories>(context, listen: false)
-        .getCategories[cat]!
+        .getCategories[tempCat]!
         .startTimerBool();
     Provider.of<Categories>(context, listen: false)
-        .getCategories[cat]!
+        .getCategories[tempCat]!
         .startTimer(func: () {
       setState(() {});
     });
   }
 
   void continueDay() {
+    /// If the time of sleeping is very less then you may continue the day,
+    // TODO: the sleep time will be added to the current day sleep
+
     setState(() {
       isRunning = !isRunning;
       Provider.of<Categories>(context, listen: false).readCategories();
@@ -64,6 +82,8 @@ class _HomeState extends State<Home> {
   }
 
   void startEndButtonOnPressed() {
+    /// Handles the functionality of the start/end button
+
     isRunning = !isRunning;
     bool resetTime1 = false;
     bool resetTime2 = false;
@@ -87,79 +107,58 @@ class _HomeState extends State<Home> {
     bool isEndable = Provider.of<Categories>(context, listen: false)
         .getCategories['work']!
         .didExceed(dirnUp: false);
+
+    actions = [
+      TextButton(
+        child: Text(
+          'No',
+          style: kInfoTextStyle.copyWith(color: kRed),
+        ),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+      ),
+      TextButton(
+        child: Text(
+          'Yes',
+          style: kInfoTextStyle.copyWith(color: kBaseColor),
+        ),
+        onPressed: () {
+          if (!isRunning) {
+            Provider.of<Tasks>(context, listen: false).deleteAllTasks();
+          }
+          Provider.of<Categories>(context, listen: false).saveBeginTimeData();
+          Navigator.of(context).pop();
+          startEndButtonOnPressed();
+        },
+      ),
+    ];
     if (isEndable && isRunning) {
       alertBoxTextTitle = 'Warning';
-      alertBoxTextContent =
+      alertBoxTextDesc =
           'You have not finished your minimum day limit so you cannot end it.';
-      optionsType = false;
-      actions = [
-        TextButton(
-          child: Text(
-            'Ok',
-            style: kInfoTextStyle.copyWith(color: kLightBlue),
-          ),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        )
-      ];
     } else if (!isRunning &&
         !Provider.of<Categories>(context, listen: false)
             .getCategories['sleep prev night']!
             .didExceed(dirnUp: false)) {
       alertBoxTextTitle = 'Note';
-      alertBoxTextContent =
+      alertBoxTextDesc =
           'Since you have slept very little so your day was continued';
-      optionsType = false;
-      actions = [
-        TextButton(
-          child: Text(
-            'Ok',
-            style: kInfoTextStyle.copyWith(color: kLightBlue),
-          ),
-          onPressed: () {
-            startEndButtonOnPressed();
-            Navigator.of(context).pop();
-          },
-        )
-      ];
     } else {
       alertBoxTextTitle = 'Confirm';
-      alertBoxTextContent =
+      alertBoxTextDesc =
           'Do you want to ${isRunning ? 'End' : 'Begin'} your day?';
-      optionsType = true;
-      actions = [
-        TextButton(
-          child: Text(
-            'No',
-            style: kInfoTextStyle.copyWith(color: kRed),
-          ),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        TextButton(
-          child: Text(
-            'Yes',
-            style: kInfoTextStyle.copyWith(color: kLightBlue),
-          ),
-          onPressed: () {
-            if (!isRunning) {
-              Provider.of<Tasks>(context, listen: false).deleteAllTasks();
-            }
-            Provider.of<Categories>(context, listen: false).saveBeginTimeData();
-            Navigator.of(context).pop();
-            startEndButtonOnPressed();
-          },
-        ),
-      ];
     }
   }
 
-  List<DropdownMenuItem<String>> getItems() {
+  List<DropdownMenuItem<String>> getCategoriesData() {
+    /// Gets the category data i.e. each category, their appropriate color and
+    /// time invested on them
+
     List<DropdownMenuItem<String>> items = [];
     Map<String, Category> categories =
         Provider.of<Categories>(context).getCategories;
+
     for (int i = 1; i < categories.keys.length; i++) {
       String cat = categories.keys.elementAt(i);
       items.add(
@@ -182,11 +181,13 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    /// Without this hero animation doesn't work
     timeDilation = 2;
+
     return Scaffold(
-      backgroundColor: kDarkBlue,
+      backgroundColor: kDarkBackgroundColor,
       appBar: AppBar(
-        backgroundColor: kDarkBlue,
+        backgroundColor: kDarkBackgroundColor,
         automaticallyImplyLeading: false,
         centerTitle: true,
         title: Hero(tag: 'Logo&AppName', child: logoAndAppName(fontSize: 23)),
@@ -203,6 +204,7 @@ class _HomeState extends State<Home> {
                   CircularProgressBar(radius: 220),
                   const SizedBox(height: 20),
                   GlowText(
+                    /// What are you doing now?
                     Provider.of<Categories>(context).getCurrentUserState,
                     style: kInfoTextStyle.copyWith(
                         fontSize: 30,
@@ -212,6 +214,7 @@ class _HomeState extends State<Home> {
                             .getCategoryColor),
                   ),
                   Row(
+                    /// Select the category to see how much you invested on each
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CustomDropDown(
@@ -219,7 +222,7 @@ class _HomeState extends State<Home> {
                           taskCategory = val as String;
                           setState(() {});
                         },
-                        items: getItems(),
+                        items: getCategoriesData(),
                         val: taskCategory,
                       ),
                     ],
@@ -233,8 +236,10 @@ class _HomeState extends State<Home> {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialogBox(
+
+                                /// The confirmation and notice overlay
                                 textTitle: alertBoxTextTitle!,
-                                textContent: alertBoxTextContent!,
+                                textContent: alertBoxTextDesc!,
                                 actions: actions!);
                           });
                     },
@@ -263,6 +268,7 @@ class _HomeState extends State<Home> {
               ),
             ),
             Container(
+              /// Tracked List
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Provider.of<Tasks>(context).nTasks > 0
@@ -279,7 +285,7 @@ class _HomeState extends State<Home> {
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                     children: Provider.of<Tasks>(context).getTasksInverted),
               ),

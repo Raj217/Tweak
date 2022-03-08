@@ -1,3 +1,6 @@
+/// Pick time
+/// TODO: After midnight bug
+
 import 'package:flutter/material.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:tweak/utils/constants.dart';
@@ -20,7 +23,7 @@ class EditableTime extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           showPicker(
-              accentColor: kLightBlue,
+              accentColor: kBaseColor,
               okStyle: const TextStyle(
                   fontFamily: 'MohrRounded', fontWeight: FontWeight.bold),
               cancelStyle: const TextStyle(

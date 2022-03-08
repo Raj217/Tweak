@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:tweak/utils/constants.dart';
+import 'package:tweak/utils/color_helper.dart';
 
 class RoundedButton extends StatelessWidget {
-  const RoundedButton(
-      {required this.text, required this.onPressed, this.textStyle});
+  RoundedButton({required this.text, required this.onPressed, this.textStyle});
 
   final String text;
   final TextStyle? textStyle;
   final void Function()? onPressed;
+
+  // Constant values for widgets
+  final double height = 60;
+  final double borderWidth = 2;
+  final Color borderColor = kBaseColor;
+  final List<Color> gradientColors = [
+    kBaseColor,
+    ColorHelper.getCounterForwardColor(color: kBaseColor)
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -15,27 +24,25 @@ class RoundedButton extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         Container(
+          // Outer border
           width: double.infinity,
-          height: 60,
+          height: height,
           decoration: BoxDecoration(
             border: Border.all(
-              width: 2,
-              color: kLightBlue,
+              width: borderWidth,
+              color: borderColor,
             ),
             borderRadius: const BorderRadius.all(Radius.circular(25)),
-            color: Colors.transparent,
-            gradient: const LinearGradient(
-              colors: [kLightBlue, kViolet],
-            ),
           ),
         ),
         Padding(
+          // The inner button
           padding: const EdgeInsets.only(left: 5, right: 5),
           child: Container(
             width: double.infinity,
-            decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [kLightBlue, kViolet]),
-                borderRadius: BorderRadius.all(Radius.circular(20))),
+            decoration: BoxDecoration(
+                gradient: LinearGradient(colors: gradientColors),
+                borderRadius: const BorderRadius.all(Radius.circular(20))),
             child: TextButton(
               child: Text(
                 text,

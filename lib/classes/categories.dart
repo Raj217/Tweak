@@ -25,7 +25,7 @@ class Categories extends ChangeNotifier {
         upperLim: const Duration(seconds: 25200), // 7 hr
         baseColor: kYellow,
         hintText: 'Sleep',
-        bias: Duration(minutes: 5)),
+        bias: const Duration(minutes: 5)),
     'sleep current day': Category(
       // Default sleep
       id: 'sleep current day',
@@ -159,6 +159,10 @@ class Categories extends ChangeNotifier {
         cat = 'sleep prev night';
         dt = sleepPrevNightTime;
       }
+
+      // NOTE: The bug of extra time is due to the fact that suppose our app is running
+      // then we cancel it and start it again so maybe since the begin time of that
+      // category was not changed on opening it again it adds extra time
       _categories[cat]!.addTime(dt: DateTime.now().difference(dt));
     }
   }

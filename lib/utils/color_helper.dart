@@ -53,8 +53,6 @@ class ColorHelper {
 
   static List<double> rgb2hsv(
       {required double r, required double g, required double b}) {
-    /// Given RGB Code it converts it to HSV
-
     r = r / 255;
     g = g / 255;
     b = b / 255;

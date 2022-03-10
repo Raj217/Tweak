@@ -3,11 +3,16 @@ import 'package:tweak/utils/constants.dart';
 import 'package:tweak/utils/local_storage.dart';
 import 'package:tweak/widgets/task_tile.dart';
 import 'dart:convert';
+import 'package:tweak/overlays/showDesc.dart';
 
 class Tasks extends ChangeNotifier {
   List<TaskTile> _tasks = [];
   FileHandler fileHandler = FileHandler();
   static String fileName = 'tasks.json';
+
+  // ----------------------------- Methods -------------------------------
+
+  // -------------- Return Data --------------
 
   List<TaskTile> get getTasks {
     sortTasks();
@@ -15,74 +20,9 @@ class Tasks extends ChangeNotifier {
   }
 
   List<TaskTile> get getTasksInverted {
+    /// Return tasks list in inverted order
     sortTasks();
     return _tasks.reversed.toList();
-  }
-
-  void addTask({required TaskTile task, bool trimCurrentTaskStartTime = true}) {
-    int len = _tasks.length;
-    if (len == 0) {
-      _tasks.add(task);
-    } else {
-      TaskTile lastTask = _tasks[len - 1];
-      Duration difference = task.startDateTime.difference(lastTask.endDateTime);
-      if (difference.inSeconds == 0) {
-        _tasks.add(task);
-      } else if (difference.inSeconds > 0) {
-        int index = len;
-        DateTime startDateTime = lastTask.endDateTime;
-        DateTime endDateTime = task.startDateTime;
-        String taskName = 'Unregistered Task';
-        String taskDesc = 'What you did in this period was not registered.';
-        String taskCategory = 'unregistered';
-        _tasks.add(TaskTile(
-          index: index,
-          startDateTime: startDateTime,
-          endDateTime: endDateTime,
-          taskName: taskName,
-          taskDesc: taskDesc,
-          taskCategory: taskCategory,
-          baseColor: kRed,
-        ));
-        _tasks.add((TaskTile(
-          index: task.index + 1,
-          startDateTime: task.startDateTime,
-          endDateTime: task.endDateTime,
-          taskName: task.taskName,
-          taskDesc: task.taskDesc,
-          taskCategory: task.taskCategory,
-          baseColor: task.baseColor,
-        )));
-      } else {
-        if (trimCurrentTaskStartTime == true) {
-          _tasks.add((TaskTile(
-            index: task.index,
-            startDateTime: lastTask.endDateTime,
-            endDateTime: task.endDateTime,
-            taskName: task.taskName,
-            taskDesc: task.taskDesc,
-            taskCategory: task.taskCategory,
-            baseColor: task.baseColor,
-          )));
-        } else {
-          editTask(
-              index: len - 1,
-              task: TaskTile(
-                index: lastTask.index,
-                startDateTime: lastTask.startDateTime,
-                endDateTime: task.startDateTime,
-                taskName: lastTask.taskName,
-                taskDesc: lastTask.taskDesc,
-                taskCategory: lastTask.taskCategory,
-                baseColor: lastTask.baseColor,
-              ));
-          _tasks.add(task);
-        }
-      }
-    }
-
-    _saveTasks();
-    notifyListeners();
   }
 
   int get nTasks {
@@ -93,12 +33,62 @@ class Tasks extends ChangeNotifier {
     return _tasks[_tasks.length - 1];
   }
 
+  void addTask({required TaskTile task, bool trimCurrentTaskStartTime = true}) {
+    int len = _tasks.length;
+    if (len == 0) {
+      _tasks.add(task); // First task
+    } else {
+      TaskTile lastTask = _tasks[len - 1];
+      Duration difference =
+          task.getStartDateTime.difference(lastTask.getEndDateTime);
+      if (difference.inSeconds == 0) {
+        // Everything is tracked properly from time to time
+        _tasks.add(task);
+      } else if (difference.inSeconds > 0) {
+        // Missing(unregistered) task in between the prev task and the current task to be added
+        int index = len;
+        DateTime startDateTime = lastTask.getEndDateTime;
+        DateTime endDateTime = task.getStartDateTime;
+        String taskName = 'Unregistered Task';
+        String taskDesc = 'What you did in this period was not registered.';
+        String taskCategory = 'unregistered';
+        _tasks.add(TaskTile(
+          id: index,
+          startDateTime: startDateTime,
+          endDateTime: endDateTime,
+          taskName: taskName,
+          taskDesc: taskDesc,
+          taskCategory: taskCategory,
+          baseColor: kRed,
+        )); // Added the unregistered task
+        _tasks.add(task.setId(task.getId +
+            1)); // Added the tracked task entered by the user and added id 1 so it is pushed (1 for unregistered)
+      } else {
+        // Overlapping
+        if (trimCurrentTaskStartTime == true) {
+          // Current task will be trimmed
+          _tasks.add(task.setStartDateTime(lastTask.getEndDateTime));
+        } else {
+          // The previous task will be trimmed
+          editTask(
+              index: len - 1,
+              task: lastTask.setEndDateTime(task.getStartDateTime));
+          _tasks.add(task);
+        }
+      }
+    }
+
+    _saveTasks();
+    notifyListeners();
+  }
+
   void sortTasks() {
-    _tasks.sort((a, b) => a.index.compareTo(b.index));
+    _tasks.sort((a, b) => a.getId.compareTo(b.getId));
     _saveTasks();
   }
 
   void _reindex({int index = 0}) {
+    // Helpful when task added in between (future) or task deleted
     for (int i = index; i < _tasks.length; i++) {
       _tasks[i].setIndex(i);
     }
@@ -126,27 +116,13 @@ class Tasks extends ChangeNotifier {
     if (!taskOverlapping) {
       _tasks[index] = task;
     } else {
-      TaskTile last2Task = _tasks[nTasks - 2];
+      TaskTile last2ndTask = _tasks[nTasks - 2];
       if (trimCurrentTaskStartTime == true) {
-        _tasks[nTasks - 1] = TaskTile(
-          index: task.index,
-          startDateTime: last2Task.endDateTime,
-          endDateTime: task.endDateTime,
-          taskName: task.taskName,
-          taskDesc: task.taskDesc,
-          taskCategory: task.taskCategory,
-          baseColor: task.baseColor,
-        );
+        // Current task to be edited is trimmed
+        _tasks[nTasks - 1].setStartDateTime(last2ndTask.getEndDateTime);
       } else {
-        _tasks[nTasks - 2] = TaskTile(
-          index: last2Task.index,
-          startDateTime: last2Task.startDateTime,
-          endDateTime: task.startDateTime,
-          taskName: last2Task.taskName,
-          taskDesc: last2Task.taskDesc,
-          taskCategory: last2Task.taskCategory,
-          baseColor: last2Task.baseColor,
-        );
+        // Prev task to be edited is trimmed
+        _tasks[nTasks - 2].setEndDateTime(task.getStartDateTime);
         _tasks[nTasks - 1] = task;
       }
     }
@@ -158,24 +134,7 @@ class Tasks extends ChangeNotifier {
   void _saveTasks() {
     List<Map<String, String>> tasksData = [];
     for (TaskTile _task in _tasks) {
-      int index = _task.index;
-      DateTime startDateTime = _task.startDateTime;
-      DateTime endDateTime = _task.endDateTime;
-      Duration duration =
-          _task.duration ?? endDateTime.difference(startDateTime);
-      String taskName = _task.taskName ?? 'Unknown Task';
-      String taskDesc = _task.taskDesc ?? 'No Description';
-      String taskCategory = _task.taskCategory;
-      Map<String, String> data = {
-        'index': index.toString(),
-        'startDateTime': startDateTime.toString(),
-        'endDateTime': endDateTime.toString(),
-        'taskName': taskName,
-        'taskDesc': taskDesc,
-        'durationSecs': duration.inSeconds.toString(),
-        'taskCategory': taskCategory,
-      };
-      tasksData.add(data);
+      tasksData.add(_task.getDataToSave);
     }
     fileHandler.write(fileName: fileName, data: json.encode(tasksData));
   }
@@ -183,24 +142,12 @@ class Tasks extends ChangeNotifier {
   void readTasks() async {
     if (await fileHandler.fileExists(fileName: fileName)) {
       String data = await fileHandler.readData(fileName: fileName);
-
+      List<TaskTile> temp = [];
       dynamic decodedData = json.decode(data);
-
       for (int i = 0; i < decodedData.length; i++) {
-        addTask(
-          task: TaskTile(
-            index: int.parse(decodedData[i]['index']),
-            startDateTime: DateTime.parse(decodedData[i]['startDateTime']),
-            endDateTime: DateTime.parse(decodedData[i]['endDateTime']),
-            taskName: decodedData[i]['taskName'],
-            taskDesc: decodedData[i]['taskDesc'],
-            duration: Duration(
-              seconds: int.parse(decodedData[i]['durationSecs']),
-            ),
-            taskCategory: decodedData[i]['taskCategory'],
-          ),
-        );
+        temp.add(TaskTile.parse(data: decodedData[i]));
       }
+      _tasks = temp;
     }
   }
 }

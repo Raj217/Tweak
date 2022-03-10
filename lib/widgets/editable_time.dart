@@ -1,5 +1,4 @@
 /// Pick time
-/// TODO: After midnight bug
 
 import 'package:flutter/material.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';

@@ -11,36 +11,159 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tweak/classes/tasks_data.dart';
 
 class TaskTile extends StatelessWidget {
+  late int _id;
+  late DateTime _startDateTime;
+  late DateTime _endDateTime;
+  late String _taskName;
+  late String _taskDesc;
+  late String _taskCategory;
+  Color? _baseColor;
+  Duration? _duration;
+
+  // ------------------------------ Initialisation -----------------------------
   TaskTile({
-    required this.index,
-    required this.startDateTime,
-    required this.endDateTime,
-    required this.taskName,
-    required this.taskDesc,
-    required this.taskCategory,
-    this.baseColor,
-    this.duration,
-  });
+    required int id,
+    required DateTime startDateTime,
+    required DateTime endDateTime,
+    required String taskName,
+    required String taskDesc,
+    required String taskCategory,
+    Color? baseColor,
+    Duration? duration,
+  }) {
+    _id = id;
+    _startDateTime = startDateTime;
+    _endDateTime = endDateTime;
+    _taskName = taskName;
+    _taskDesc = taskDesc;
+    _taskCategory = taskCategory;
+    _baseColor = baseColor ?? kBaseColor;
+    _duration = duration ?? const Duration(seconds: 0);
+  }
 
-  int index;
-  DateTime startDateTime;
-  DateTime endDateTime;
-  String? taskName;
-  String? taskDesc;
-  Duration? duration;
-  String taskCategory;
-  Color? baseColor;
+  // Constants
   final DateFormat timeExtractor = DateFormat('h:mm a');
+  final DateFormat dateExtractor = DateFormat('MMM d, yy');
 
-  void setIndex(int i) {
-    index = i;
+  // ----------------------------- Public Methods -------------------------------
+
+  // -------------- Return Data --------------
+  int get getId {
+    return _id;
   }
 
-  void _setDuration() {
-    duration = duration ?? endDateTime.difference(startDateTime);
+  DateTime get getStartDateTime {
+    return _startDateTime;
   }
 
-  String durationExtractor(Duration diff) {
+  DateTime get getEndDateTime {
+    return _endDateTime;
+  }
+
+  String get getTaskName {
+    return _taskName;
+  }
+
+  String get getTaskDesc {
+    return _taskDesc;
+  }
+
+  String get getTaskCategory {
+    return _taskCategory;
+  }
+
+  Color get getTaskColor {
+    return _baseColor ?? kBaseColor;
+  }
+
+  Duration get getDuration {
+    return _duration!;
+  }
+
+  Map<String, String> get getDataToSave {
+    Map<String, String> data = {
+      'id': _id.toString(),
+      'startDateTime': _startDateTime.toString(),
+      'endDateTime': _endDateTime.toString(),
+      'taskName': _taskName,
+      'taskDesc': _taskDesc,
+      'durationSecs': _duration!.inSeconds.toString(),
+      'taskCategory': _taskCategory,
+    };
+
+    return data;
+  }
+
+  // -------------- Change Class Variables' value --------------
+  TaskTile get getCurrentTask {
+    return TaskTile(
+        id: _id,
+        startDateTime: _startDateTime,
+        endDateTime: _endDateTime,
+        taskName: _taskName,
+        taskDesc: _taskDesc,
+        taskCategory: _taskCategory,
+        duration: _duration,
+        baseColor: _baseColor);
+  }
+
+  TaskTile setId(int id) {
+    _id = id;
+    return getCurrentTask;
+  }
+
+  TaskTile setStartDateTime(DateTime dt) {
+    _startDateTime = dt;
+    return getCurrentTask;
+  }
+
+  TaskTile setEndDateTime(DateTime dt) {
+    _endDateTime = dt;
+    return getCurrentTask;
+  }
+
+  TaskTile setTaskName(String taskName) {
+    _taskName = taskName;
+    return getCurrentTask;
+  }
+
+  TaskTile setTaskDesc(String taskDesc) {
+    _taskDesc = taskDesc;
+    return getCurrentTask;
+  }
+
+  TaskTile setTaskCategory(String taskCat) {
+    _taskCategory = taskCat;
+    return getCurrentTask;
+  }
+
+  TaskTile setIndex(int i) {
+    _id = i;
+    return getCurrentTask;
+  }
+
+  TaskTile _setDuration() {
+    _duration = _duration ?? _endDateTime.difference(_startDateTime);
+    return getCurrentTask;
+  }
+
+  // ----------------------------- Static Methods -----------------------------
+  static TaskTile parse({
+    required Map<String, dynamic> data,
+  }) {
+    return TaskTile(
+        id: int.parse(data['id']!),
+        startDateTime: DateTime.parse(data['startDateTime']!),
+        endDateTime: DateTime.parse(data['endDateTime']!),
+        taskName: data['taskName']!,
+        taskDesc: data['taskDesc']!,
+        duration: Duration(
+          seconds: int.parse(data['durationSecs']!),
+        ),
+        taskCategory: data['taskCategory']!);
+  }
+
+  static String durationExtractor(Duration diff) {
     if (diff.inHours > 0) {
       return '${diff.inHours}h';
     } else if (diff.inMinutes > 0) {
@@ -53,18 +176,19 @@ class TaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     _setDuration();
-    baseColor ??= Provider.of<Categories>(context, listen: false)
-        .getCategories[taskCategory]!
+    _baseColor ??= Provider.of<Categories>(context, listen: false)
+        .getCategories[_taskCategory]!
         .getCategoryColor;
     return GestureDetector(
       onDoubleTap: () {
         showModalBottomSheet(
+          // Bring up the editable screen to change prev data
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           context: context,
           builder: (context) => AddEditTask(
             edit: true,
-            index: index,
+            index: _id,
           ),
         );
       },
@@ -83,14 +207,49 @@ class TaskTile extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              Row(
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        dateExtractor.format(_startDateTime),
+                                        style: kInfoTextStyle.copyWith(
+                                            fontSize: 8),
+                                      ),
+                                      Text(timeExtractor.format(_startDateTime),
+                                          style: kInfoTextStyle.copyWith(
+                                              color: _baseColor)),
+                                    ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 4, right: 4, top: 10.0),
+                                    child: Text('-',
+                                        style: kInfoTextStyle.copyWith(
+                                            color: _baseColor)),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        dateExtractor.format(_endDateTime),
+                                        style: kInfoTextStyle.copyWith(
+                                            fontSize: 8),
+                                      ),
+                                      Text(timeExtractor.format(_endDateTime),
+                                          style: kInfoTextStyle.copyWith(
+                                              color: _baseColor)),
+                                    ],
+                                  ),
+                                ],
+                              ),
                               Text(
-                                  '${timeExtractor.format(startDateTime)} - ${timeExtractor.format(endDateTime)}',
-                                  style: kInfoTextStyle.copyWith(
-                                      color: baseColor)),
-                              Text(
-                                durationExtractor(duration!),
+                                durationExtractor(_duration!),
                                 style:
-                                    kInfoTextStyle.copyWith(color: baseColor),
+                                    kInfoTextStyle.copyWith(color: _baseColor),
                               )
                             ],
                           ),
@@ -102,11 +261,11 @@ class TaskTile extends StatelessWidget {
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Text(
-                              taskName ?? 'Unknown Task',
+                              _taskName,
                               style: kInfoTextStyle.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 22,
-                                  color: baseColor),
+                                  color: _baseColor),
                             ),
                           ),
                         )
@@ -154,24 +313,28 @@ class TaskTile extends StatelessWidget {
                                       ]);
                                 }).then((val) {
                               if (deleteTask) {
-                                if (duration!.inSeconds > 0) {
+                                if (_duration!.inSeconds > 0) {
                                   Map<String, Category> categories =
                                       Provider.of<Categories>(context,
                                               listen: false)
                                           .getCategories;
-                                  categories[taskCategory]!
-                                      .subtractTime(dt: duration!);
-                                  categories['work']!.addTime(dt: duration!);
+                                  categories[_taskCategory]!.subtractTime(
+                                      dt: _duration!); // Subtract time from the category of task which was deleted
+                                  categories[Provider.of<Categories>(context,
+                                              listen: false)
+                                          .getCurrentUserState]!
+                                      .addTime(
+                                          dt: _duration!); // Add that time to what the user is currently doing
                                 }
                                 Provider.of<Tasks>(context, listen: false)
-                                    .deleteTask(index);
+                                    .deleteTask(_id);
                               }
                             });
                           },
                           child: SvgPicture.asset(
                             '$kIconsPath/delete.svg',
                             height: 23,
-                            color: baseColor,
+                            color: _baseColor,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -182,11 +345,10 @@ class TaskTile extends StatelessWidget {
                               context: context,
                               backgroundColor: Colors.transparent,
                               builder: (context) => ShowDesc(
-                                taskName: taskName ??
-                                    'Unknown Task', // TODO: Correct this and the next line as well
-                                taskDesc: taskDesc ?? '',
-                                taskCategory: taskCategory,
-                                catCol: baseColor ?? kBaseColor,
+                                taskName: _taskName,
+                                taskDesc: _taskDesc,
+                                taskCategory: _taskCategory,
+                                catCol: _baseColor ?? kBaseColor,
                               ),
                             );
                           },
@@ -199,14 +361,14 @@ class TaskTile extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: baseColor ?? kBaseColor,
+                                      color: _baseColor ?? kBaseColor,
                                       width: 2.5),
                                 ),
                               ),
                               Text(
                                 'i',
                                 style: kInfoTextStyle.copyWith(
-                                    fontSize: 13, color: baseColor),
+                                    fontSize: 13, color: _baseColor),
                               )
                             ],
                           ),

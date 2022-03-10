@@ -26,6 +26,9 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  /// To check if the app was resumed from background
+  AppLifecycleState? _notification;
+
   /// Title of the alertBox overlay
   String? alertBoxTextTitle;
 
@@ -40,6 +43,12 @@ class _HomeState extends State<Home> {
 
   /// The current task category which is shown below the circular progress bar
   String taskCategory = 'sleep prev night';
+
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _notification = state;
+    });
+  }
 
   @override
   void initState() {
@@ -66,15 +75,23 @@ class _HomeState extends State<Home> {
   }
 
   void continueDay() {
-    /// If the time of sleeping is very less then you may continue the day,
-    // TODO: the sleep time will be added to the current day sleep
-
+    /// If the time of sleeping is very less then you may continue the day
     setState(() {
       isRunning = !isRunning;
       Provider.of<Categories>(context, listen: false).readCategories();
+      Provider.of<Tasks>(context, listen: false).readTasks();
+      Provider.of<Categories>(context,
+              listen:
+                  false) //  the sleep time will be added to the current day sleep
+          .getCategories['sleep current day']!
+          .addTime(
+              dt: Provider.of<Categories>(context, listen: false)
+                  .getCategories['sleep prev night']!
+                  .getTimePassed);
       Provider.of<Categories>(context, listen: false).toggleCategories(
           cat1: 'work',
           cat2: 'sleep prev night',
+          resetTime2: true,
           startTimerFunc: () {
             setState(() {});
           });
@@ -183,6 +200,12 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     /// Without this hero animation doesn't work
     timeDilation = 2;
+
+    /// If resumed read the prev saved data
+    if (_notification == AppLifecycleState.resumed) {
+      Provider.of<Categories>(context, listen: false).readCategories();
+      Provider.of<Tasks>(context, listen: false).readTasks();
+    }
 
     return Scaffold(
       backgroundColor: kDarkBackgroundColor,

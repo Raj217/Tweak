@@ -13,8 +13,7 @@ import 'package:tweak/classes/categories.dart';
 import 'package:tweak/classes/category.dart';
 
 class AddEditTask extends StatefulWidget {
-  AddEditTask({Key? key, bool this.edit = false, int this.index = 0})
-      : super(key: key);
+  AddEditTask({Key? key, this.edit = false, this.index = 0}) : super(key: key);
 
   bool edit;
   int index;
@@ -34,10 +33,12 @@ class _AddEditTaskState extends State<AddEditTask> {
   String? taskName;
   String? taskDesc;
   Duration? duration;
-  bool trimCurrentTaskStartTime = true;
-  bool overlappingTasks = false;
-  bool addTaskOverlap = true; // For handling cancel
+  bool trimCurrentTaskStartTime = true; // Trim the new task or the previous one
+  bool overlappingTasks = false; // Are the tasks overlapping?
+  bool addTaskOverlap =
+      true; // Should I handle the overlap or should it be cancelled
   final DateFormat timeExtractor = DateFormat('jm');
+  final DateFormat dateExtractor = DateFormat('MMM d, yy');
   late Map<String, Category> categories;
   @override
   void initState() {
@@ -51,11 +52,13 @@ class _AddEditTaskState extends State<AddEditTask> {
   void getTaskData() {
     TaskTile task =
         Provider.of<Tasks>(context, listen: false).getTasks[widget.index];
-    startDateTime = task.startDateTime;
-    endDateTime = task.endDateTime;
-    prevTaskCategory = task.taskCategory;
-    taskCategory = task.taskCategory;
-    duration = task.duration;
+    taskName = task.getTaskName;
+    taskDesc = task.getTaskDesc;
+    startDateTime = task.getStartDateTime;
+    endDateTime = task.getEndDateTime;
+    prevTaskCategory = task.getTaskCategory;
+    taskCategory = task.getTaskCategory;
+    duration = task.getDuration;
   }
 
   void getStartAndEndTime() {
@@ -63,9 +66,9 @@ class _AddEditTaskState extends State<AddEditTask> {
     DateTime now = DateTime.now();
     if (tasks.isNotEmpty) {
       TaskTile lastTask = tasks[tasks.length - 1];
-      startDateTime = lastTask.endDateTime;
-      Duration diff = now.difference(lastTask.endDateTime);
-      DateTime dt = diff.inSeconds < 0 ? lastTask.endDateTime : now;
+      startDateTime = lastTask.getEndDateTime;
+      Duration diff = now.difference(lastTask.getEndDateTime);
+      DateTime dt = diff.inSeconds < 0 ? lastTask.getEndDateTime : now;
       endDateTime = dt;
     } else {
       Map<String, Category> categories =
@@ -89,7 +92,9 @@ class _AddEditTaskState extends State<AddEditTask> {
     duration = duration ?? endDateTime!.difference(startDateTime!);
     if (duration!.inSeconds > 0) {
       categories[taskCategory]!.addTime(dt: duration!);
-      categories['work']!.subtractTime(dt: duration!);
+      categories[Provider.of<Categories>(context, listen: false)
+              .getCurrentUserState]!
+          .subtractTime(dt: duration!);
     }
   }
 
@@ -99,7 +104,7 @@ class _AddEditTaskState extends State<AddEditTask> {
         Provider.of<Tasks>(context, listen: false).addTask(
           trimCurrentTaskStartTime: trimCurrentTaskStartTime,
           task: TaskTile(
-            index: Provider.of<Tasks>(context, listen: false).nTasks,
+            id: Provider.of<Tasks>(context, listen: false).nTasks,
             startDateTime: startDateTime!,
             endDateTime: endDateTime!,
             taskName: taskName ?? categories[taskCategory]!.getHintText,
@@ -122,17 +127,11 @@ class _AddEditTaskState extends State<AddEditTask> {
           trimCurrentTaskStartTime: trimCurrentTaskStartTime,
           taskOverlapping: overlappingTasks,
           task: TaskTile(
-            index: widget.index,
+            id: widget.index,
             startDateTime: startDateTime!,
             endDateTime: endDateTime!,
-            taskName: categories[taskCategory]!.getHintText,
-            taskDesc: categories[taskCategory]!.getHintDesc,
-            /*taskName: taskCategory == 'sleep'
-                ? 'sleep'
-                : categories[taskCategory]!.getHintText,
-            taskDesc: taskCategory == 'sleep'
-                ? ''
-                : categories[taskCategory]!.getHintDesc,*/
+            taskName: taskName ?? categories[taskCategory]!.getHintText,
+            taskDesc: taskDesc ?? categories[taskCategory]!.getHintDesc,
             taskCategory: taskCategory,
             duration: duration,
             baseColor: categories[taskCategory]!.getCategoryColor,
@@ -201,64 +200,95 @@ class _AddEditTaskState extends State<AddEditTask> {
                     children: [
                       Row(
                         children: [
-                          EditableTime(
-                              text: timeExtractor
-                                  .format(startDateTime!)
-                                  .toLowerCase(),
-                              timeVal: startDateTime!,
-                              onChange: (_) {},
-                              onChangeDateTime: (time) {
-                                setState(() {
-                                  startDateTime = time;
-                                  if (endDateTime!
-                                          .difference(startDateTime!)
-                                          .inSeconds <
-                                      0) {
-                                    endDateTime = startDateTime;
-                                  }
-                                  if (Provider.of<Tasks>(context, listen: false)
-                                          .nTasks >
-                                      0) {
-                                    TaskTile lastTask = Provider.of<Tasks>(
-                                            context,
-                                            listen: false)
-                                        .getLastTask;
-                                    Duration diff = startDateTime!
-                                        .difference(lastTask.endDateTime);
-                                    if (diff.inSeconds < 0) {
-                                      overlappingTasks = true;
-                                    }
-                                  } else {
-                                    beginDateTime;
-                                    categories['sleep prev night']!
-                                        .subtractTime(
-                                            dt: beginDateTime!
-                                                .difference(startDateTime!));
-                                  }
-                                });
-                              }),
-                          Text(
-                            ' - ',
-                            style: kInfoTextStyle.copyWith(
-                                color: kWhite, fontWeight: FontWeight.w700),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                dateExtractor.format(startDateTime!),
+                                style: kInfoTextStyle.copyWith(
+                                    color: kWhite, fontSize: 8),
+                              ),
+                              EditableTime(
+                                  text: timeExtractor
+                                      .format(startDateTime!)
+                                      .toLowerCase(),
+                                  timeVal: startDateTime!,
+                                  onChange: (_) {},
+                                  onChangeDateTime: (time) {
+                                    setState(() {
+                                      startDateTime = time;
+                                      if (endDateTime!
+                                              .difference(startDateTime!)
+                                              .inSeconds < // end Time is before start time
+                                          0) {
+                                        endDateTime = endDateTime!.add(
+                                            const Duration(
+                                                days:
+                                                    1)); // Next day (After midnight)
+                                      }
+                                      if (Provider.of<Tasks>(context,
+                                                  listen: false)
+                                              .nTasks >
+                                          0) {
+                                        TaskTile lastTask = Provider.of<Tasks>(
+                                                context,
+                                                listen: false)
+                                            .getLastTask;
+                                        Duration diff = startDateTime!
+                                            .difference(
+                                                lastTask.getEndDateTime);
+                                        if (diff.inSeconds < 0) {
+                                          overlappingTasks = true;
+                                        }
+                                      } else {
+                                        beginDateTime;
+                                        categories['sleep prev night']!
+                                            .subtractTime(
+                                                dt: beginDateTime!.difference(
+                                                    startDateTime!));
+                                      }
+                                    });
+                                  }),
+                            ],
                           ),
-                          EditableTime(
-                              text: timeExtractor
-                                  .format(endDateTime!)
-                                  .toLowerCase(),
-                              timeVal: endDateTime!,
-                              onChange: (_) {},
-                              onChangeDateTime: (time) {
-                                setState(() {
-                                  endDateTime = time;
-                                  if (endDateTime!
-                                          .difference(startDateTime!)
-                                          .inSeconds <
-                                      0) {
-                                    endDateTime = startDateTime;
-                                  }
-                                });
-                              }),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10.0),
+                            child: Text(
+                              ' - ',
+                              style: kInfoTextStyle.copyWith(
+                                  color: kWhite, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                dateExtractor.format(endDateTime!),
+                                style: kInfoTextStyle.copyWith(
+                                    color: kWhite, fontSize: 8),
+                              ),
+                              EditableTime(
+                                  text: timeExtractor
+                                      .format(endDateTime!)
+                                      .toLowerCase(),
+                                  timeVal: endDateTime!,
+                                  onChange: (_) {},
+                                  onChangeDateTime: (time) {
+                                    setState(() {
+                                      endDateTime = time;
+                                      if (endDateTime!
+                                              .difference(startDateTime!)
+                                              .inSeconds <
+                                          0) {
+                                        endDateTime = endDateTime!.add(
+                                            const Duration(
+                                                days:
+                                                    1)); // Next Day (After Midnight)
+                                      }
+                                    });
+                                  }),
+                            ],
+                          )
                         ],
                       ),
                       Text(

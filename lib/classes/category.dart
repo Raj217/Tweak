@@ -16,7 +16,7 @@ class Category extends ChangeNotifier {
   String _hintText = 'Unknown Task';
   String _hintDesc = '';
   String _run = '0'; // 0: false, 1: true
-  Duration _bias = Duration(seconds: 0);
+  Duration _bias = const Duration(seconds: 0);
   // -------------------------------- Constants --------------------------------
   final DateFormat dfDateExtractor = DateFormat('EEE MMM d, yyyy');
 
@@ -170,7 +170,8 @@ class Category extends ChangeNotifier {
   }
 
   void resetTime() {
-    _beginTime = _time.add(_bias);
+    _beginTime = DateTime.now();
+    _time = DateTime.now();
   }
 
   void setUpperLim(Duration duration) {
@@ -200,16 +201,4 @@ class Category extends ChangeNotifier {
         run: data[6],
         bias: Duration(seconds: int.parse(data[7])));
   }
-
-  // ----------------------------- Private Methods -----------------------------
-  /*
-  void _boundTime() {
-    if (didExceed()) {
-      _time = _beginTime.add(_upperLim - Duration(seconds: 1));
-    } else if (didExceed(dt: const Duration(seconds: 0), dirnUp: false)) {
-      // TODO: Possible bug
-      _time = _beginTime.add(const Duration(seconds: 0));
-    }
-  }
-  */
 }

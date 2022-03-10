@@ -89,6 +89,10 @@ class TaskTile extends StatelessWidget {
       'taskDesc': _taskDesc,
       'durationSecs': _duration!.inSeconds.toString(),
       'taskCategory': _taskCategory,
+      'red': _baseColor!.red.toString(),
+      'green': _baseColor!.green.toString(),
+      'blue': _baseColor!.blue.toString(),
+      'opacity': _baseColor!.opacity.toString()
     };
 
     return data;
@@ -152,15 +156,21 @@ class TaskTile extends StatelessWidget {
     required Map<String, dynamic> data,
   }) {
     return TaskTile(
-        id: int.parse(data['id']!),
-        startDateTime: DateTime.parse(data['startDateTime']!),
-        endDateTime: DateTime.parse(data['endDateTime']!),
-        taskName: data['taskName']!,
-        taskDesc: data['taskDesc']!,
-        duration: Duration(
-          seconds: int.parse(data['durationSecs']!),
-        ),
-        taskCategory: data['taskCategory']!);
+      id: int.parse(data['id']!),
+      startDateTime: DateTime.parse(data['startDateTime']!),
+      endDateTime: DateTime.parse(data['endDateTime']!),
+      taskName: data['taskName']!,
+      taskDesc: data['taskDesc']!,
+      duration: Duration(
+        seconds: int.parse(data['durationSecs']!),
+      ),
+      taskCategory: data['taskCategory']!,
+      baseColor: Color.fromRGBO(
+          int.parse(data['red']),
+          int.parse(data['green']),
+          int.parse(data['blue']),
+          double.parse(data['opacity'])),
+    );
   }
 
   static String durationExtractor(Duration diff) {
@@ -216,7 +226,7 @@ class TaskTile extends StatelessWidget {
                                       Text(
                                         dateExtractor.format(_startDateTime),
                                         style: kInfoTextStyle.copyWith(
-                                            fontSize: 8),
+                                            fontSize: 8, color: _baseColor),
                                       ),
                                       Text(timeExtractor.format(_startDateTime),
                                           style: kInfoTextStyle.copyWith(
@@ -228,7 +238,8 @@ class TaskTile extends StatelessWidget {
                                         left: 4, right: 4, top: 10.0),
                                     child: Text('-',
                                         style: kInfoTextStyle.copyWith(
-                                            color: _baseColor)),
+                                          color: _baseColor,
+                                        )),
                                   ),
                                   Column(
                                     crossAxisAlignment:
@@ -237,7 +248,7 @@ class TaskTile extends StatelessWidget {
                                       Text(
                                         dateExtractor.format(_endDateTime),
                                         style: kInfoTextStyle.copyWith(
-                                            fontSize: 8),
+                                            fontSize: 8, color: _baseColor),
                                       ),
                                       Text(timeExtractor.format(_endDateTime),
                                           style: kInfoTextStyle.copyWith(

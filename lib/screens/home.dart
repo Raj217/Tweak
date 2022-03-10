@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
+import 'package:intl/intl.dart';
 import 'package:tweak/classes/categories.dart';
 import 'package:tweak/classes/category.dart';
 import 'package:tweak/overlays/add_edit_tasks.dart';
-import 'package:tweak/utils/color_helper.dart';
 import 'package:tweak/utils/constants.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:tweak/overlays/alert_dialog_box.dart';
@@ -25,10 +25,7 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
-  /// To check if the app was resumed from background
-  AppLifecycleState? _notification;
-
+class _HomeState extends State<Home> with WidgetsBindingObserver {
   /// Title of the alertBox overlay
   String? alertBoxTextTitle;
 
@@ -44,15 +41,14 @@ class _HomeState extends State<Home> {
   /// The current task category which is shown below the circular progress bar
   String taskCategory = 'sleep prev night';
 
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    setState(() {
-      _notification = state;
-    });
-  }
+  /// Start or Ended date time at the top;
+  String startEndDateTime = '';
 
+  // ------------------------------- Overriding -------------------------------
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance?.addObserver(this);
 
     isRunning = Provider.of<Categories>(context, listen: false)
         .getCategories['work']!
@@ -72,8 +68,39 @@ class _HomeState extends State<Home> {
         .startTimer(func: () {
       setState(() {});
     });
+    _getStartEndDateTime();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Provider.of<Categories>(context, listen: false).saveCategories();
+
+    /// If inactive close the app
+    /// TODO: May wait till 1 min or so, since android allows it to run parallel for about a minute
+    ///
+    /*
+    if (state == AppLifecycleState.inactive) {
+      Navigator.pop(context);
+    }
+     */
+    setState(() {
+      if (state == AppLifecycleState.resumed) {
+        Provider.of<Categories>(context, listen: false).readCategories();
+        Provider.of<Tasks>(context, listen: false).readTasks;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
+    super.dispose();
+  }
+
+  // ----------------------------- Helper functions -----------------------------
+
+  // ------------------------------- Edit data -------------------------------
   void continueDay() {
     /// If the time of sleeping is very less then you may continue the day
     setState(() {
@@ -168,6 +195,16 @@ class _HomeState extends State<Home> {
     }
   }
 
+  void _getStartEndDateTime() {
+    /// Returns when the day was started / ended
+
+    startEndDateTime = DateFormat('hh:mm:ss (MMM d, yy)')
+        .format(
+            Provider.of<Categories>(context, listen: false).getBeginDateTime)
+        .toString();
+  }
+
+  // ------------------------------- Return data -------------------------------
   List<DropdownMenuItem<String>> getCategoriesData() {
     /// Gets the category data i.e. each category, their appropriate color and
     /// time invested on them
@@ -201,12 +238,6 @@ class _HomeState extends State<Home> {
     /// Without this hero animation doesn't work
     timeDilation = 2;
 
-    /// If resumed read the prev saved data
-    if (_notification == AppLifecycleState.resumed) {
-      Provider.of<Categories>(context, listen: false).readCategories();
-      Provider.of<Tasks>(context, listen: false).readTasks();
-    }
-
     return Scaffold(
       backgroundColor: kDarkBackgroundColor,
       appBar: AppBar(
@@ -219,11 +250,20 @@ class _HomeState extends State<Home> {
         child: ListView(
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
+              padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  GlowText(
+                    isRunning
+                        ? 'Started: ' + startEndDateTime
+                        : 'Ended: ' + startEndDateTime,
+                    style: kInfoTextStyle.copyWith(
+                        color: Provider.of<Categories>(context)
+                            .getCurrentUserStateColor),
+                  ),
+                  const SizedBox(height: 20),
                   CircularProgressBar(radius: 220),
                   const SizedBox(height: 20),
                   GlowText(
@@ -253,7 +293,7 @@ class _HomeState extends State<Home> {
                   const SizedBox(height: 20),
                   RoundedButton(
                     text: isRunning ? 'End' : 'Begin',
-                    onPressed: () async {
+                    onPressed: () {
                       getValuesForAlertBox();
                       showDialog(
                           context: context,
@@ -264,7 +304,11 @@ class _HomeState extends State<Home> {
                                 textTitle: alertBoxTextTitle!,
                                 textContent: alertBoxTextDesc!,
                                 actions: actions!);
-                          });
+                          }).then((_) {
+                        setState(() {
+                          _getStartEndDateTime();
+                        });
+                      });
                     },
                   ),
                   Padding(

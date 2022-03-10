@@ -9,7 +9,7 @@ class Categories extends ChangeNotifier {
   static const String fileName = 'categories.json';
   static const String timeFileName = 'time.json';
   late DateTime beginDateTime;
-  String currentUserState = 'work';
+  String _currentUserState = 'work';
 
   FileHandler fileHandler = FileHandler();
   final Map<String, Category> _categories = {
@@ -54,7 +54,17 @@ class Categories extends ChangeNotifier {
   }
 
   String get getCurrentUserState {
-    return currentUserState;
+    return _currentUserState;
+  }
+
+  Color get getCurrentUserStateColor {
+    Color out = kBaseColor;
+    _categories.forEach((key, value) {
+      if (key == _currentUserState) {
+        out = value.getCategoryColor;
+      }
+    });
+    return out;
   }
 
   DateTime get getBeginDateTime {
@@ -119,7 +129,7 @@ class Categories extends ChangeNotifier {
   }
 
   void saveCategories({bool saveBeginTime = false}) {
-    Map<String, List<String>> data = {};
+    Map<String, Map<String, dynamic>> data = {};
     _categories.forEach((key, value) {
       data[key] = value.getDataToSave;
     });
@@ -135,22 +145,11 @@ class Categories extends ChangeNotifier {
       dynamic dataDecoded =
           json.decode(await fileHandler.readData(fileName: fileName));
       dataDecoded.forEach((key, value) {
-        _categories[key] = Category(
-            id: value[0],
-            cat: value[1],
-            baseTime: DateTime.parse(value[2]),
-            beginTime: DateTime.parse(value[3]),
-            lowerLim: Duration(seconds: int.parse(value[4])),
-            upperLim: Duration(seconds: int.parse(value[5])),
-            baseColor: Color(int.parse(value[6])),
-            overTimeColor: Color(int.parse(value[7])),
-            hintText: value[8],
-            hintDesc: value[9],
-            run: value[10]);
+        _categories[key] = Category.parse(data: value);
         if (key == 'work') {
-          workTime = DateTime.parse(value[2]);
+          workTime = DateTime.parse(value['base time']);
         } else if (key == 'sleep prev night') {
-          sleepPrevNightTime = DateTime.parse(value[2]);
+          sleepPrevNightTime = DateTime.parse(value['base time']);
         }
       });
       String cat = 'work';

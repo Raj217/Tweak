@@ -3,7 +3,6 @@ import 'package:tweak/utils/constants.dart';
 import 'package:tweak/utils/local_storage.dart';
 import 'package:tweak/widgets/task_tile.dart';
 import 'dart:convert';
-import 'package:tweak/overlays/showDesc.dart';
 
 class Tasks extends ChangeNotifier {
   List<TaskTile> _tasks = [];
@@ -142,12 +141,10 @@ class Tasks extends ChangeNotifier {
   void readTasks() async {
     if (await fileHandler.fileExists(fileName: fileName)) {
       String data = await fileHandler.readData(fileName: fileName);
-      List<TaskTile> temp = [];
       dynamic decodedData = json.decode(data);
       for (int i = 0; i < decodedData.length; i++) {
-        temp.add(TaskTile.parse(data: decodedData[i]));
+        addTask(task: TaskTile.parse(data: decodedData[i]));
       }
-      _tasks = temp;
     }
   }
 }

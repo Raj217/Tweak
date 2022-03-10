@@ -3,6 +3,8 @@
 ///
 /// NOTE: The duration is constant as for this version
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:tweak/classes/categories.dart';
@@ -42,7 +44,11 @@ class _LoadingScreenState extends State<LoadingScreen>
         setState(() {});
       });
 
-    controller.forward().then((value) => Navigator.pushNamed(context, Home.id));
+    controller
+        .forward()
+        .then((value) => Navigator.pushNamed(context, Home.id).then((value) {
+              exit(0); // Exit the app
+            }));
   }
 
   @override

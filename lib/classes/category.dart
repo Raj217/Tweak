@@ -97,21 +97,27 @@ class Category extends ChangeNotifier {
     return didExceed(dt: _upperLim) ? _overTimeColor : _baseColor;
   }
 
-  List<String> get getDataToSave {
-    return [
-      _id,
-      _cat,
-      _time.toString(),
-      _beginTime.toString(),
-      _lowerLim.inSeconds.toString(),
-      _upperLim.inSeconds.toString(),
-      _baseColor.toString().substring(6, 16),
-      _overTimeColor.toString().substring(6, 16),
-      _hintText,
-      _hintDesc,
-      _run,
-      _bias.inSeconds.toString()
-    ];
+  Map<String, String> get getDataToSave {
+    return {
+      'id': _id,
+      'cat': _cat,
+      'base time': _time.toString(),
+      'begin time': _beginTime.toString(),
+      'lower lim': _lowerLim.inSeconds.toString(),
+      'upper lim': _upperLim.inSeconds.toString(),
+      'base Color red': _baseColor.red.toString(),
+      'base Color blue': _baseColor.blue.toString(),
+      'base Color green': _baseColor.green.toString(),
+      'base Color opacity': _baseColor.opacity.toString(),
+      'over time Color red': _overTimeColor.red.toString(),
+      'over time Color blue': _overTimeColor.blue.toString(),
+      'over time Color green': _overTimeColor.green.toString(),
+      'over time Color opacity': _overTimeColor.opacity.toString(),
+      'hint text': _hintText,
+      'hint desc': _hintDesc,
+      'run': _run,
+      'bias': _bias.inSeconds.toString()
+    };
   }
 
   bool didExceed({Duration? dt, bool dirnUp = true}) {
@@ -185,20 +191,27 @@ class Category extends ChangeNotifier {
   }
 
   // ----------------------------- Static Methods -----------------------------
-  static Category parse(
-      {required List<String> data,
-      required Color baseColor,
-      required Color overTimeColor}) {
+  static Category parse({required Map<String, dynamic> data}) {
     return Category(
-        id: data[0],
-        cat: data[1],
-        baseTime: DateTime.parse(data[2]),
-        beginTime: DateTime.parse(data[3]),
-        lowerLim: Duration(seconds: int.parse(data[4])),
-        upperLim: Duration(seconds: int.parse(data[5])),
-        baseColor: baseColor,
-        overTimeColor: overTimeColor,
-        run: data[6],
-        bias: Duration(seconds: int.parse(data[7])));
+        id: data['id'],
+        cat: data['cat'],
+        baseTime: DateTime.parse(data['base time']),
+        beginTime: DateTime.parse(data['begin time']),
+        lowerLim: Duration(seconds: int.parse(data['lower lim'])),
+        upperLim: Duration(seconds: int.parse(data['upper lim'])),
+        baseColor: Color.fromRGBO(
+            int.parse(data['base Color red']),
+            int.parse(data['base Color green']),
+            int.parse(data['base Color blue']),
+            double.parse(data['base Color opacity'])),
+        overTimeColor: Color.fromRGBO(
+            int.parse(data['over time Color red']),
+            int.parse(data['over time Color green']),
+            int.parse(data['over time Color blue']),
+            double.parse(data['over time Color opacity'])),
+        hintText: data['hint text'],
+        hintDesc: data['hint desc'],
+        run: data['run'],
+        bias: Duration(seconds: int.parse(data['bias'])));
   }
 }

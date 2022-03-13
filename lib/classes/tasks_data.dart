@@ -32,6 +32,7 @@ class Tasks extends ChangeNotifier {
     return _tasks[_tasks.length - 1];
   }
 
+  // -------------- Add/Edit Data --------------
   void addTask({required TaskTile task, bool trimCurrentTaskStartTime = true}) {
     int len = _tasks.length;
     if (len == 0) {
@@ -57,6 +58,7 @@ class Tasks extends ChangeNotifier {
           endDateTime: endDateTime,
           taskName: taskName,
           taskDesc: taskDesc,
+          duration: endDateTime.difference(startDateTime),
           taskCategory: taskCategory,
           baseColor: kRed,
         )); // Added the unregistered task
@@ -138,8 +140,9 @@ class Tasks extends ChangeNotifier {
     fileHandler.write(fileName: fileName, data: json.encode(tasksData));
   }
 
-  void readTasks() async {
+  Future<void> readTasks() async {
     if (await fileHandler.fileExists(fileName: fileName)) {
+      _tasks = [];
       String data = await fileHandler.readData(fileName: fileName);
       dynamic decodedData = json.decode(data);
       for (int i = 0; i < decodedData.length; i++) {

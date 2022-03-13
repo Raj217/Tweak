@@ -136,7 +136,7 @@ class Categories extends ChangeNotifier {
     fileHandler.write(fileName: fileName, data: json.encode(data));
   }
 
-  void readCategories() async {
+  Future<void> readCategories() async {
     await _readBeginTimeData();
     if (await fileHandler.fileExists(fileName: fileName)) {
       late DateTime workTime;

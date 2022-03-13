@@ -49,7 +49,38 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance?.addObserver(this);
+    initData();
+  }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    super.didChangeAppLifecycleState(state);
+    // Provider.of<Categories>(context, listen: false).saveCategories();
+
+    /// If inactive close the app
+    /*
+    if (state == AppLifecycleState.inactive) {
+      Navigator.pop(context);
+    }
+     */
+    if (state == AppLifecycleState.resumed) {
+      await Provider.of<Categories>(context, listen: false).readCategories();
+      initData();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
+    super.dispose();
+  }
+
+  // ----------------------------- Helper functions -----------------------------
+
+  // ------------------------------- Edit data -------------------------------
+
+  void initData() {
+    /// Initialize data and start appropriate timer
     isRunning = Provider.of<Categories>(context, listen: false)
         .getCategories['work']!
         .isRunning;
@@ -71,36 +102,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     _getStartEndDateTime();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // Provider.of<Categories>(context, listen: false).saveCategories();
-
-    /// If inactive close the app
-    /// TODO: May wait till 1 min or so, since android allows it to run parallel for about a minute
-    ///
-    /*
-    if (state == AppLifecycleState.inactive) {
-      Navigator.pop(context);
-    }
-     */
-    setState(() {
-      if (state == AppLifecycleState.resumed) {
-        Provider.of<Categories>(context, listen: false).readCategories();
-        Provider.of<Tasks>(context, listen: false).readTasks;
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
-    super.dispose();
-  }
-
-  // ----------------------------- Helper functions -----------------------------
-
-  // ------------------------------- Edit data -------------------------------
   void continueDay() {
     /// If the time of sleeping is very less then you may continue the day
     setState(() {

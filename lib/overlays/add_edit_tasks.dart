@@ -169,12 +169,19 @@ class _AddEditTaskState extends State<AddEditTask> {
   }
 
   String durationExtractor(Duration diff) {
-    if (diff.inHours > 0) {
-      return '${diff.inHours}h';
+    int h = diff.inHours;
+    int min = diff.inMinutes;
+    int sec = diff.inSeconds;
+
+    min -= 60 * h;
+    sec -= 3600 * h + 60 * min;
+
+    if (h > 0) {
+      return '${h}h ${min}min';
     } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes}min';
+      return '${min}min ${sec}s';
     } else {
-      return '${diff.inSeconds}s';
+      return '${sec}s';
     }
   }
 
@@ -221,7 +228,7 @@ class _AddEditTaskState extends State<AddEditTask> {
                                               .difference(startDateTime!)
                                               .inSeconds < // end Time is before start time
                                           0) {
-                                        endDateTime = endDateTime!.add(
+                                        startDateTime = startDateTime!.subtract(
                                             const Duration(
                                                 days:
                                                     1)); // Next day (After midnight)

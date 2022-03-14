@@ -96,6 +96,10 @@ class _AddEditTaskState extends State<AddEditTask> {
               .getCurrentUserState]!
           .subtractTime(dt: duration!);
     }
+    if (!overlappingTasks) {
+      categories['sleep prev night']!
+          .subtractTime(dt: beginDateTime!.difference(startDateTime!));
+    }
   }
 
   void addEditTask() {
@@ -247,12 +251,6 @@ class _AddEditTaskState extends State<AddEditTask> {
                                         if (diff.inSeconds < 0) {
                                           overlappingTasks = true;
                                         }
-                                      } else {
-                                        beginDateTime;
-                                        categories['sleep prev night']!
-                                            .subtractTime(
-                                                dt: beginDateTime!.difference(
-                                                    startDateTime!));
                                       }
                                     });
                                   }),

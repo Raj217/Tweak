@@ -66,15 +66,33 @@ class Category extends ChangeNotifier {
 
   String getTimeFormatted({Duration? diff}) {
     diff = diff ?? getTimePassed;
-    if (diff.inHours > 0) {
-      return '${diff.inHours}h ${diff.inMinutes % 60}min';
-    } else {
-      return '${diff.inMinutes}min ${diff.inSeconds % 60}s';
+    String diffStr = diff.toString();
+    int hInd, minInd;
+    hInd = diffStr.indexOf(':');
+    minInd = diffStr.indexOf(':', hInd + 1);
+    String out = '';
+    if (diff.inSeconds < 0) {
+      out += '-';
     }
+    if (diff.inHours > 0) {
+      out +=
+          '${int.parse(diffStr.substring(0, hInd))}h ${int.parse(diffStr.substring(hInd + 1, minInd))}min';
+    } else {
+      out +=
+          '${int.parse(diffStr.substring(hInd + 1, minInd))}min ${double.parse(diffStr.substring(minInd + 1)).toInt()}s';
+    }
+
+    return out;
   }
 
   Duration get getTimePassed {
-    return _time.difference(_beginTime);
+    Duration time = _time.difference(_beginTime);
+    if ((time + _bias).inSeconds >= 0) {
+      return time;
+    } else {
+      _beginTime = _time.add(_bias);
+      return const Duration(seconds: 0);
+    }
   }
 
   String get getHintText {
@@ -176,7 +194,7 @@ class Category extends ChangeNotifier {
   }
 
   void resetTime() {
-    _beginTime = DateTime.now();
+    _beginTime = DateTime.now().add(_bias);
     _time = DateTime.now();
   }
 

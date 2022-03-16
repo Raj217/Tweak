@@ -26,7 +26,7 @@ class AddEditTask extends StatefulWidget {
 
 class _AddEditTaskState extends State<AddEditTask> {
   DateTime? startDateTime;
-  DateTime? beginDateTime;
+  late DateTime beginDateTime;
   DateTime? endDateTime;
   String taskCategory = 'work';
   String? prevTaskCategory;
@@ -40,6 +40,7 @@ class _AddEditTaskState extends State<AddEditTask> {
   final DateFormat timeExtractor = DateFormat('jm');
   final DateFormat dateExtractor = DateFormat('MMM d, yy');
   late Map<String, Category> categories;
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +65,8 @@ class _AddEditTaskState extends State<AddEditTask> {
   void getStartAndEndTime() {
     List<TaskTile> tasks = Provider.of<Tasks>(context, listen: false).getTasks;
     DateTime now = DateTime.now();
+    beginDateTime =
+        Provider.of<Categories>(context, listen: false).getBeginDateTime;
     if (tasks.isNotEmpty) {
       TaskTile lastTask = tasks[tasks.length - 1];
       startDateTime = lastTask.getEndDateTime;
@@ -80,8 +83,6 @@ class _AddEditTaskState extends State<AddEditTask> {
           dt.subtract(value.getTimePassed);
         }
       });
-      beginDateTime =
-          Provider.of<Categories>(context, listen: false).getBeginDateTime;
       startDateTime =
           Provider.of<Categories>(context, listen: false).getBeginDateTime;
       endDateTime = now;
@@ -98,7 +99,7 @@ class _AddEditTaskState extends State<AddEditTask> {
     }
     if (!overlappingTasks) {
       categories['sleep prev night']!
-          .subtractTime(dt: beginDateTime!.difference(startDateTime!));
+          .subtractTime(dt: beginDateTime.difference(startDateTime!));
     }
   }
 
@@ -170,23 +171,6 @@ class _AddEditTaskState extends State<AddEditTask> {
       );
     }
     return items;
-  }
-
-  String durationExtractor(Duration diff) {
-    int h = diff.inHours;
-    int min = diff.inMinutes;
-    int sec = diff.inSeconds;
-
-    min -= 60 * h;
-    sec -= 3600 * h + 60 * min;
-
-    if (h > 0) {
-      return '${h}h ${min}min';
-    } else if (diff.inMinutes > 0) {
-      return '${min}min ${sec}s';
-    } else {
-      return '${sec}s';
-    }
   }
 
   @override
@@ -297,8 +281,8 @@ class _AddEditTaskState extends State<AddEditTask> {
                         ],
                       ),
                       Text(
-                          durationExtractor(
-                              endDateTime!.difference(startDateTime!)),
+                          Category().getTimeFormatted(
+                              diff: endDateTime!.difference(startDateTime!)),
                           style: kInfoTextStyle.copyWith(
                               color: kWhite, fontWeight: FontWeight.w700))
                     ],

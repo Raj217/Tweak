@@ -71,15 +71,23 @@ class Category extends ChangeNotifier {
     hInd = diffStr.indexOf(':');
     minInd = diffStr.indexOf(':', hInd + 1);
     String out = '';
+
+    int h = int.parse(diffStr.substring(0, hInd));
+    int min = int.parse(diffStr.substring(hInd + 1, minInd));
+    int sec = double.parse(diffStr.substring(minInd + 1)).toInt();
     if (diff.inSeconds < 0) {
       out += '-';
     }
-    if (diff.inHours > 0) {
-      out +=
-          '${int.parse(diffStr.substring(0, hInd))}h ${int.parse(diffStr.substring(hInd + 1, minInd))}min';
+    if (h > 0) {
+      out += '${h}h ';
+      if (min > 0) {
+        out += '${min}min';
+      }
     } else {
-      out +=
-          '${int.parse(diffStr.substring(hInd + 1, minInd))}min ${double.parse(diffStr.substring(minInd + 1)).toInt()}s';
+      if (min > 0) {
+        out += '${min}min ';
+      }
+      out += '${sec}s';
     }
 
     return out;

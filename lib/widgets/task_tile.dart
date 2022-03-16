@@ -173,16 +173,6 @@ class TaskTile extends StatelessWidget {
     );
   }
 
-  static String durationExtractor(Duration diff) {
-    if (diff.inHours > 0) {
-      return '${diff.inHours}h';
-    } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes}min';
-    } else {
-      return '${diff.inSeconds}s';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     _setDuration();
@@ -258,7 +248,7 @@ class TaskTile extends StatelessWidget {
                                 ],
                               ),
                               Text(
-                                durationExtractor(_duration!),
+                                Category().getTimeFormatted(diff: _duration!),
                                 style:
                                     kInfoTextStyle.copyWith(color: _baseColor),
                               )
@@ -329,13 +319,35 @@ class TaskTile extends StatelessWidget {
                                       Provider.of<Categories>(context,
                                               listen: false)
                                           .getCategories;
+
                                   categories[_taskCategory]!.subtractTime(
                                       dt: _duration!); // Subtract time from the category of task which was deleted
-                                  categories[Provider.of<Categories>(context,
-                                              listen: false)
-                                          .getCurrentUserState]!
-                                      .addTime(
-                                          dt: _duration!); // Add that time to what the user is currently doing
+                                  if (Provider.of<Tasks>(context, listen: false)
+                                          .nTasks >
+                                      1) {
+                                    categories[Provider.of<Categories>(context,
+                                                listen: false)
+                                            .getCurrentUserState]!
+                                        .addTime(
+                                            dt: _duration!); // Add that time to what the user is currently doing
+                                  } else {
+                                    print('yo');
+                                    Duration durationForCurrentTask =
+                                        DateTime.now().difference(
+                                            Provider.of<Categories>(context,
+                                                    listen: false)
+                                                .getBeginDateTime);
+                                    Duration durationSleepNightTrimmed =
+                                        _duration! - durationForCurrentTask;
+
+                                    categories[Provider.of<Categories>(context,
+                                                listen: false)
+                                            .getCurrentUserState]!
+                                        .addTime(
+                                            dt: durationForCurrentTask); // Add that time to what the user is currently doing
+                                    categories['sleep prev night']!.addTime(
+                                        dt: durationSleepNightTrimmed); // Add that time to the prev night sleep since it overlapped
+                                  }
                                 }
                                 Provider.of<Tasks>(context, listen: false)
                                     .deleteTask(_id);
